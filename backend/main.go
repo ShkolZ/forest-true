@@ -23,13 +23,13 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /api/products")
-	mux.HandleFunc("GET /api/details")
+	mux.HandleFunc("GET /api/products", handlerGetProducts)
+	mux.HandleFunc("GET /api/details", handlerGetDetails)
 
-	mux.HandleFunc("POST /api/register")
-	mux.HandleFunc("POST /api/login")
-	mux.HandleFunc("POST /api/detail")
-	mux.HandleFunc("POST /api/products")
+	mux.HandleFunc("POST /api/register", handlerRegister)
+	mux.HandleFunc("POST /api/login", handlerLogin)
+	mux.HandleFunc("POST /api/detail", handlerPostDetails)
+	mux.HandleFunc("POST /api/products", handlerPostProducts)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
