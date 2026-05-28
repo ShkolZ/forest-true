@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -22,6 +23,10 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	fs := http.Dir("../frontend")
+	fmt.Println(fs)
+	appHandler := http.StripPrefix("/frontend", http.FileServer(http.Dir("../frontend")))
+	mux.Handle("/frontend/", appHandler)
 
 	mux.HandleFunc("GET /api/products", handlerGetProducts)
 	mux.HandleFunc("GET /api/details", handlerGetDetails)
