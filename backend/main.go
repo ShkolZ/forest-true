@@ -56,7 +56,7 @@ func main() {
 	mux.HandleFunc("GET /api/me", cfg.AuthMiddleware(cfg.handlerMe))
 
 	mux.HandleFunc("POST /api/register", cfg.AuthMiddleware(cfg.handlerRegister))
-	mux.HandleFunc("POST /api/login", cfg.AuthMiddleware(cfg.handlerLogin))
+	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
 	mux.HandleFunc("POST /api/detail", cfg.AuthMiddleware(cfg.handlerPostDetails))
 	mux.HandleFunc("POST /api/products", cfg.AuthMiddleware(cfg.handlerPostProducts))
 

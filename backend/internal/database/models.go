@@ -48,12 +48,21 @@ type Product struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 }
 
+type RefreshToken struct {
+	Token     string    `json:"token"`
+	RevokedAt time.Time `json:"revoked_at"`
+	UserID    uuid.UUID `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 type User struct {
 	ID           uuid.UUID `json:"id"`
 	Username     string    `json:"username"`
 	PasswordHash string    `json:"password_hash"`
 	FirstName    string    `json:"first_name"`
 	LastName     string    `json:"last_name"`
+	IsAdmin      bool      `json:"is_admin"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }

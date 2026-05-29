@@ -22,7 +22,7 @@ type CustomClaims struct {
 type TokenType string
 
 const (
-	TokenTypeAccess TokenType = "tubely-access"
+	TokenTypeAccess TokenType = "forest-access"
 )
 
 var ErrNoAuthHeaderIncluded = errors.New("no auth header included in request")
