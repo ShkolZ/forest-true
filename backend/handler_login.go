@@ -1,11 +1,17 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+)
 
-func handlerRegister(w http.ResponseWriter, r *http.Request) {
+func (cfg *ApiConfig) handlerRegister(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func handlerLogin(w http.ResponseWriter, r *http.Request) {
+func (cfg *ApiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (cfg *ApiConfig) handlerMe(w http.ResponseWriter, r *http.Request) {
 
 }

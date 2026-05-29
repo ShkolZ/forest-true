@@ -1,13 +1,20 @@
 package main
 
 import (
-	"fmt"
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/ShkolZ/forest-true/internal/database"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
+
+type ApiConfig struct {
+	db          *database.Queries
+	tokenSecret string
+}
 
 func main() {
 	godotenv.Load(".env")
@@ -22,23 +29,40 @@ func main() {
 		log.Fatalln("Couldn't load dbString")
 	}
 
+	tokenSecret := os.Getenv("JWT_SECRET")
+	if tokenSecret == "" {
+		log.Fatalln("Couldn't load jwt secret")
+	}
+
+	conn, err := sql.Open("postgres", dbString)
+	if err != nil {
+		log.Fatalln("Couldn't load dbString")
+	}
+
+	queries := database.New(conn)
+
+	cfg := ApiConfig{
+		db:          queries,
+		tokenSecret: tokenSecret,
+	}
+
 	mux := http.NewServeMux()
-	fs := http.Dir("../frontend")
-	fmt.Println(fs)
+
 	appHandler := http.StripPrefix("/frontend", http.FileServer(http.Dir("../frontend")))
 	mux.Handle("/frontend/", appHandler)
 
-	mux.HandleFunc("GET /api/products", handlerGetProducts)
-	mux.HandleFunc("GET /api/details", handlerGetDetails)
+	mux.HandleFunc("GET /api/products", cfg.handlerGetProducts)
+	mux.HandleFunc("GET /api/details", cfg.handlerGetDetails)
+	mux.HandleFunc("GET /api/me", cfg.AuthMiddleware(cfg.handlerMe))
 
-	mux.HandleFunc("POST /api/register", handlerRegister)
-	mux.HandleFunc("POST /api/login", handlerLogin)
-	mux.HandleFunc("POST /api/detail", handlerPostDetails)
-	mux.HandleFunc("POST /api/products", handlerPostProducts)
+	mux.HandleFunc("POST /api/register", cfg.AuthMiddleware(cfg.handlerRegister))
+	mux.HandleFunc("POST /api/login", cfg.AuthMiddleware(cfg.handlerLogin))
+	mux.HandleFunc("POST /api/detail", cfg.AuthMiddleware(cfg.handlerPostDetails))
+	mux.HandleFunc("POST /api/products", cfg.AuthMiddleware(cfg.handlerPostProducts))
 
 	srv := &http.Server{
 		Addr:    ":" + port,
-		Handler: mux,
+		Handler: cfg.LoggingMiddleware(mux),
 	}
 
 	log.Printf("Server is started on http://localhost:%v", port)
