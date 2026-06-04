@@ -135,13 +135,12 @@ func (cfg *ApiConfig) handlerMe(w http.ResponseWriter, r *http.Request) {
 	respondWithJson(w, http.StatusOK, struct{}{})
 }
 
-func respondWithJson(w http.ResponseWriter, status int, str any) {
-	data, err := json.Marshal(str)
+func (cfg *ApiConfig) handlerGetUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := cfg.db.GetAllUsers(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Couldn't get users", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	w.Write(data)
+
+	respondWithJson(w, http.StatusOK, users)
 }

@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback, type FormEvent, type ChangeEvent } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  type FormEvent,
+  type ChangeEvent,
+} from "react";
 import { productsApi } from "../../api/products";
 import { useToast } from "../../hooks/useToast";
 import { ApiError } from "../../api/client";
@@ -126,7 +132,11 @@ export default function DashboardProducts() {
       width: "80px",
       render: (val) =>
         val ? (
-          <img src={String(val)} alt="" className="h-10 w-10 rounded-md object-cover" />
+          <img
+            src={String(val)}
+            alt=""
+            className="h-10 w-10 rounded-md object-cover"
+          />
         ) : (
           <span className="text-slate-300">—</span>
         ),
@@ -162,7 +172,12 @@ export default function DashboardProducts() {
         </div>
         <Button onClick={openCreate}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path
+              d="M8 3v10M3 8h10"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
           </svg>
           Add Product
         </Button>
@@ -198,7 +213,10 @@ export default function DashboardProducts() {
           />
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="product-image" className="text-sm font-medium text-slate-700">
+            <label
+              htmlFor="product-image"
+              className="text-sm font-medium text-slate-700"
+            >
               Image
             </label>
             <Input

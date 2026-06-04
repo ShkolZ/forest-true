@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,12 +19,12 @@ RETURNING id, name, description, image_url, created_at, updated_at
 `
 
 type CreateProductParams struct {
-	ID          uuid.UUID      `json:"id"`
-	Name        string         `json:"name"`
-	Description sql.NullString `json:"description"`
-	ImageUrl    sql.NullString `json:"image_url"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	ImageUrl    string    `json:"image_url"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error) {
@@ -118,11 +117,11 @@ RETURNING id, name, description, image_url, created_at, updated_at
 `
 
 type UpdateProductByIdParams struct {
-	ID          uuid.UUID      `json:"id"`
-	Name        string         `json:"name"`
-	Description sql.NullString `json:"description"`
-	ImageUrl    sql.NullString `json:"image_url"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	ImageUrl    string    `json:"image_url"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 func (q *Queries) UpdateProductById(ctx context.Context, arg UpdateProductByIdParams) (Product, error) {

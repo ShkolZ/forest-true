@@ -13,7 +13,7 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (id, username, password_hash, first_name, last_name,is_admin, created_at, updated_at)
+INSERT INTO users (id, username, password_hash, first_name, last_name, is_admin, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING id, username, password_hash, first_name, last_name, is_admin, created_at, updated_at
 `

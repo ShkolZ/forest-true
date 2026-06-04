@@ -1,0 +1,24 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: forest-true-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # web console
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # One-shot job: waits for MinIO, then creates the bucket and makes it
+  # public-read so product image URLs are directly accessible.
+
+volumes:
+  minio-data:
