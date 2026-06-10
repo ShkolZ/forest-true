@@ -110,15 +110,20 @@ func main() {
 	appHandler := http.StripPrefix("/frontend", http.FileServer(http.Dir("../frontend")))
 	mux.Handle("/frontend/", appHandler)
 
+	// GET REQUESTS
 	mux.HandleFunc("GET /api/products", cfg.handlerGetProducts)
 	mux.HandleFunc("GET /api/users", cfg.AuthMiddleware(cfg.handlerGetUsers))
-	mux.HandleFunc("GET /api/details", cfg.handlerGetDetails)
+	mux.HandleFunc("GET /api/products/{ID}/details", cfg.handlerGetDetails)
 	mux.HandleFunc("GET /api/me", cfg.AuthMiddleware(cfg.handlerMe))
 
+	// POST REQUESTS
 	mux.HandleFunc("POST /api/register", cfg.AuthMiddleware(cfg.handlerRegister))
 	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
-	mux.HandleFunc("POST /api/detail", cfg.AuthMiddleware(cfg.handlerPostDetails))
+	mux.HandleFunc("POST /api/details", cfg.AuthMiddleware(cfg.handlerPostDetails))
 	mux.HandleFunc("POST /api/products", cfg.AuthMiddleware(cfg.handlerPostProducts))
+
+	// DELETE REQUESTS
+	mux.HandleFunc("DELETE /api/details/{ID}", cfg.AuthMiddleware(cfg.handlerDeleteDetail))
 
 	srv := &http.Server{
 		Addr:    ":" + port,

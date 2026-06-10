@@ -34,8 +34,9 @@ func (cfg *ApiConfig) handlerGetProducts(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	fmt.Println(products)
+
 	respondWithJson(w, 200, products)
-	w.Header().Set("Content-Type", "application/json")
 
 }
 

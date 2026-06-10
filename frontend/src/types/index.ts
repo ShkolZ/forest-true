@@ -14,6 +14,11 @@ export interface Detail {
   name: string
   width: number
   length: number
+  // Edge banding flags — whether each side of the part is banded.
+  k_top: boolean
+  k_left: boolean
+  k_bottom: boolean
+  k_right: boolean
   amount: number
   product_id: string
   created_at: string

@@ -13,9 +13,9 @@ import (
 )
 
 const createDetail = `-- name: CreateDetail :one
-INSERT INTO details (id, name, width, length, amount, product_id, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, name, width, length, amount, product_id, created_at, updated_at
+INSERT INTO details (id, name, width, length, k_top, k_left, k_bottom, k_right, amount, product_id, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+RETURNING id, name, width, length, k_top, k_left, k_bottom, k_right, amount, product_id, created_at, updated_at
 `
 
 type CreateDetailParams struct {
@@ -23,6 +23,10 @@ type CreateDetailParams struct {
 	Name      string    `json:"name"`
 	Width     int32     `json:"width"`
 	Length    int32     `json:"length"`
+	KTop      bool      `json:"k_top"`
+	KLeft     bool      `json:"k_left"`
+	KBottom   bool      `json:"k_bottom"`
+	KRight    bool      `json:"k_right"`
 	Amount    int32     `json:"amount"`
 	ProductID uuid.UUID `json:"product_id"`
 	CreatedAt time.Time `json:"created_at"`
@@ -35,6 +39,10 @@ func (q *Queries) CreateDetail(ctx context.Context, arg CreateDetailParams) (Det
 		arg.Name,
 		arg.Width,
 		arg.Length,
+		arg.KTop,
+		arg.KLeft,
+		arg.KBottom,
+		arg.KRight,
 		arg.Amount,
 		arg.ProductID,
 		arg.CreatedAt,
@@ -46,6 +54,10 @@ func (q *Queries) CreateDetail(ctx context.Context, arg CreateDetailParams) (Det
 		&i.Name,
 		&i.Width,
 		&i.Length,
+		&i.KTop,
+		&i.KLeft,
+		&i.KBottom,
+		&i.KRight,
 		&i.Amount,
 		&i.ProductID,
 		&i.CreatedAt,
@@ -64,7 +76,7 @@ func (q *Queries) DeleteDetailById(ctx context.Context, id uuid.UUID) error {
 }
 
 const getAllDetails = `-- name: GetAllDetails :many
-SELECT id, name, width, length, amount, product_id, created_at, updated_at FROM details
+SELECT id, name, width, length, k_top, k_left, k_bottom, k_right, amount, product_id, created_at, updated_at FROM details
 `
 
 func (q *Queries) GetAllDetails(ctx context.Context) ([]Detail, error) {
@@ -81,6 +93,10 @@ func (q *Queries) GetAllDetails(ctx context.Context) ([]Detail, error) {
 			&i.Name,
 			&i.Width,
 			&i.Length,
+			&i.KTop,
+			&i.KLeft,
+			&i.KBottom,
+			&i.KRight,
 			&i.Amount,
 			&i.ProductID,
 			&i.CreatedAt,
@@ -100,7 +116,7 @@ func (q *Queries) GetAllDetails(ctx context.Context) ([]Detail, error) {
 }
 
 const getDetailById = `-- name: GetDetailById :one
-SELECT id, name, width, length, amount, product_id, created_at, updated_at FROM details WHERE id = $1
+SELECT id, name, width, length, k_top, k_left, k_bottom, k_right, amount, product_id, created_at, updated_at FROM details WHERE id = $1
 `
 
 func (q *Queries) GetDetailById(ctx context.Context, id uuid.UUID) (Detail, error) {
@@ -111,6 +127,10 @@ func (q *Queries) GetDetailById(ctx context.Context, id uuid.UUID) (Detail, erro
 		&i.Name,
 		&i.Width,
 		&i.Length,
+		&i.KTop,
+		&i.KLeft,
+		&i.KBottom,
+		&i.KRight,
 		&i.Amount,
 		&i.ProductID,
 		&i.CreatedAt,
@@ -119,11 +139,51 @@ func (q *Queries) GetDetailById(ctx context.Context, id uuid.UUID) (Detail, erro
 	return i, err
 }
 
+const getDetailsByProduct = `-- name: GetDetailsByProduct :many
+SELECT id, name, width, length, k_top, k_left, k_bottom, k_right, amount, product_id, created_at, updated_at FROM details WHERE product_id = $1 ORDER BY created_at
+`
+
+func (q *Queries) GetDetailsByProduct(ctx context.Context, productID uuid.UUID) ([]Detail, error) {
+	rows, err := q.db.QueryContext(ctx, getDetailsByProduct, productID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Detail
+	for rows.Next() {
+		var i Detail
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Width,
+			&i.Length,
+			&i.KTop,
+			&i.KLeft,
+			&i.KBottom,
+			&i.KRight,
+			&i.Amount,
+			&i.ProductID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateDetailById = `-- name: UpdateDetailById :one
 UPDATE details
-SET name = $2, width = $3, length = $4, amount = $5, product_id = $6, updated_at = $7
+SET name = $2, width = $3, length = $4, k_top = $5, k_left = $6, k_bottom = $7, k_right = $8, amount = $9, product_id = $10, updated_at = $11
 WHERE id = $1
-RETURNING id, name, width, length, amount, product_id, created_at, updated_at
+RETURNING id, name, width, length, k_top, k_left, k_bottom, k_right, amount, product_id, created_at, updated_at
 `
 
 type UpdateDetailByIdParams struct {
@@ -131,6 +191,10 @@ type UpdateDetailByIdParams struct {
 	Name      string    `json:"name"`
 	Width     int32     `json:"width"`
 	Length    int32     `json:"length"`
+	KTop      bool      `json:"k_top"`
+	KLeft     bool      `json:"k_left"`
+	KBottom   bool      `json:"k_bottom"`
+	KRight    bool      `json:"k_right"`
 	Amount    int32     `json:"amount"`
 	ProductID uuid.UUID `json:"product_id"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -142,6 +206,10 @@ func (q *Queries) UpdateDetailById(ctx context.Context, arg UpdateDetailByIdPara
 		arg.Name,
 		arg.Width,
 		arg.Length,
+		arg.KTop,
+		arg.KLeft,
+		arg.KBottom,
+		arg.KRight,
 		arg.Amount,
 		arg.ProductID,
 		arg.UpdatedAt,
@@ -152,6 +220,10 @@ func (q *Queries) UpdateDetailById(ctx context.Context, arg UpdateDetailByIdPara
 		&i.Name,
 		&i.Width,
 		&i.Length,
+		&i.KTop,
+		&i.KLeft,
+		&i.KBottom,
+		&i.KRight,
 		&i.Amount,
 		&i.ProductID,
 		&i.CreatedAt,

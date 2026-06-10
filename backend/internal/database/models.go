@@ -16,6 +16,10 @@ type Detail struct {
 	Name      string    `json:"name"`
 	Width     int32     `json:"width"`
 	Length    int32     `json:"length"`
+	KTop      bool      `json:"k_top"`
+	KLeft     bool      `json:"k_left"`
+	KBottom   bool      `json:"k_bottom"`
+	KRight    bool      `json:"k_right"`
 	Amount    int32     `json:"amount"`
 	ProductID uuid.UUID `json:"product_id"`
 	CreatedAt time.Time `json:"created_at"`
