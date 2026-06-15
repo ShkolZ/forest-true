@@ -1,23 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { ordersApi } from "../../api/orders";
 import { useToast } from "../../hooks/useToast";
-import { ApiError } from "../../api/client";
 import Table from "../../components/ui/Table";
-import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
 import type { Column, Order } from "../../types";
 
-const STATUS_VARIANTS: Record<string, "warning" | "info" | "success" | "danger"> = {
-  pending: "warning",
-  processing: "info",
-  completed: "success",
-  cancelled: "danger",
-};
-
-const STATUSES = ["pending", "processing", "completed", "cancelled"];
-
 export default function DashboardOrders() {
+  const { t, i18n } = useTranslation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -29,33 +20,17 @@ export default function DashboardOrders() {
       const data = await ordersApi.getAll();
       setOrders(data || []);
     } catch {
-      addToast("Failed to load orders", "error");
+      addToast(t("orders.failedLoad"), "error");
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, t]);
 
   useEffect(() => {
     void (async () => {
       await loadOrders();
     })();
   }, [loadOrders]);
-
-  const handleStatusChange = async (order: Order, newStatus: string) => {
-    const snapshot = orders;
-    setOrders((prev) =>
-      prev.map((o) => (o.id === order.id ? { ...o, status: newStatus } : o)),
-    );
-    setSelectedOrder((cur) => (cur ? { ...cur, status: newStatus } : cur));
-    try {
-      await ordersApi.update(order.id, { status: newStatus });
-      addToast(`Order status updated to "${newStatus}"`, "success");
-    } catch (err) {
-      setOrders(snapshot);
-      const msg = err instanceof ApiError ? err.message : "Update failed";
-      addToast(msg || "Update failed", "error");
-    }
-  };
 
   const openDetails = (order: Order) => {
     setSelectedOrder(order);
@@ -66,31 +41,29 @@ export default function DashboardOrders() {
 
   const columns: Column<Order>[] = [
     {
+      key: "title",
+      label: t("orders.titleLabel"),
+      render: (val) => (
+        <span className="font-medium text-slate-800">{String(val ?? "") || "—"}</span>
+      ),
+    },
+    {
       key: "id",
-      label: "Order ID",
+      label: t("orders.orderId"),
       render: (val) => (
         <span className={mono}>{val ? String(val).slice(0, 8) + "…" : "—"}</span>
       ),
     },
     {
-      key: "status",
-      label: "Status",
-      render: (val) => (
-        <Badge variant={STATUS_VARIANTS[String(val)] || "default"}>
-          {String(val) || "unknown"}
-        </Badge>
-      ),
-    },
-    {
       key: "user_id",
-      label: "User",
+      label: t("orders.user"),
       render: (val) => (
         <span className={mono}>{val ? String(val).slice(0, 8) + "…" : "—"}</span>
       ),
     },
     {
       key: "excel_url",
-      label: "Excel",
+      label: t("orders.excel"),
       render: (val) =>
         val ? (
           <a
@@ -99,7 +72,7 @@ export default function DashboardOrders() {
             rel="noreferrer"
             className="font-medium text-brand-600 hover:underline"
           >
-            Download
+            {t("orders.download")}
           </a>
         ) : (
           <span className="text-slate-300">—</span>
@@ -107,8 +80,9 @@ export default function DashboardOrders() {
     },
     {
       key: "created_at",
-      label: "Date",
-      render: (val) => (val ? new Date(String(val)).toLocaleDateString() : "—"),
+      label: t("orders.date"),
+      render: (val) =>
+        val ? new Date(String(val)).toLocaleDateString(i18n.language) : "—",
     },
     {
       key: "actions",
@@ -117,7 +91,7 @@ export default function DashboardOrders() {
       render: (_, row) => (
         <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={() => openDetails(row)}>
-            View
+            {t("orders.view")}
           </Button>
         </div>
       ),
@@ -128,73 +102,55 @@ export default function DashboardOrders() {
     <div className="animate-fade-in">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Orders</h1>
-          <p className="mt-1 text-slate-500">View and manage customer orders</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t("orders.title")}</h1>
+          <p className="mt-1 text-slate-500">{t("orders.subtitle")}</p>
         </div>
         <Button variant="secondary" onClick={loadOrders}>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M14 8A6 6 0 11 2.34 5.66" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="M2 2v4h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M10 11H7.101l.001-.009a4.956 4.956 0 0 1 .752-1.787 5.054 5.054 0 0 1 2.2-1.811c.302-.128.617-.226.938-.291a5.078 5.078 0 0 1 2.018 0 4.978 4.978 0 0 1 2.525 1.361l1.416-1.412a7.036 7.036 0 0 0-2.224-1.501 6.921 6.921 0 0 0-1.315-.408 7.079 7.079 0 0 0-2.819 0 6.94 6.94 0 0 0-1.316.409 7.04 7.04 0 0 0-3.08 2.534 6.978 6.978 0 0 0-1.054 2.505c-.028.135-.043.273-.063.41H2l4 4 4-4zm4 2h2.899l-.001.008a4.976 4.976 0 0 1-2.103 3.138 4.943 4.943 0 0 1-1.787.752 5.073 5.073 0 0 1-2.017 0 4.956 4.956 0 0 1-1.787-.752 5.072 5.072 0 0 1-.74-.61L7.05 16.95a7.032 7.032 0 0 0 2.225 1.5c.424.18.867.317 1.315.408a7.07 7.07 0 0 0 2.818 0 7.031 7.031 0 0 0 4.395-2.945 6.974 6.974 0 0 0 1.053-2.503c.027-.135.043-.273.063-.41H22l-4-4-4 4z" />
           </svg>
-          Refresh
+          {t("orders.refresh")}
         </Button>
       </div>
 
-      <Table columns={columns} data={orders} loading={loading} emptyMessage="No orders yet." />
+      <Table columns={columns} data={orders} loading={loading} emptyMessage={t("orders.empty")} />
 
       <Modal
         isOpen={detailsOpen}
         onClose={() => setDetailsOpen(false)}
-        title="Order Details"
+        title={t("orders.details")}
         size="md"
       >
         {selectedOrder && (
           <div className="flex flex-col gap-3">
-            <Row label="Order ID">
+            <Row label={t("orders.titleLabel")}>
+              <span className="text-sm font-medium text-slate-800">
+                {selectedOrder.title || "—"}
+              </span>
+            </Row>
+            <Row label={t("orders.orderId")}>
               <span className={mono}>{selectedOrder.id}</span>
             </Row>
-            <Row label="Status">
-              <Badge variant={STATUS_VARIANTS[selectedOrder.status] || "default"}>
-                {selectedOrder.status}
-              </Badge>
-            </Row>
-            <Row label="User ID">
+            <Row label={t("orders.userId")}>
               <span className={mono}>{selectedOrder.user_id}</span>
             </Row>
-            <Row label="Created">
+            <Row label={t("orders.createdAt")}>
               <span className="text-sm text-slate-700">
-                {new Date(selectedOrder.created_at).toLocaleString()}
+                {new Date(selectedOrder.created_at).toLocaleString(i18n.language)}
               </span>
             </Row>
             {selectedOrder.excel_url && (
-              <Row label="Excel">
+              <Row label={t("orders.excel")}>
                 <a
                   href={selectedOrder.excel_url}
                   target="_blank"
                   rel="noreferrer"
                   className="font-medium text-brand-600 hover:underline"
                 >
-                  Download File
+                  {t("orders.downloadFile")}
                 </a>
               </Row>
             )}
-
-            <div className="mt-2 border-t border-slate-100 pt-3">
-              <span className="text-sm font-medium text-slate-500">Update Status</span>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {STATUSES.map((status) => (
-                  <Button
-                    key={status}
-                    variant={selectedOrder.status === status ? "primary" : "secondary"}
-                    size="sm"
-                    onClick={() => handleStatusChange(selectedOrder, status)}
-                    disabled={selectedOrder.status === status}
-                  >
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </Button>
-                ))}
-              </div>
-            </div>
           </div>
         )}
       </Modal>

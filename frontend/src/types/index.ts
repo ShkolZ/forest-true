@@ -27,7 +27,7 @@ export interface Detail {
 
 export interface Order {
   id: string
-  status: string
+  title: string
   excel_url?: string
   user_id: string
   created_at: string

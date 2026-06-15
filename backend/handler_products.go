@@ -90,7 +90,7 @@ func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request
 		Body:   tf,
 	})
 
-	url := fmt.Sprintf("%v/%v/%v", "http://localhost:9000", *cfg.s3PublicBucket, key)
+	url := fmt.Sprintf("%v/%v/%v/%v", cfg.domainName, "s3", *cfg.s3PublicBucket, key)
 	fmt.Println(url)
 
 	cusUuid, _ := uuid.NewUUID()
@@ -111,4 +111,27 @@ func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request
 
 	respondWithJson(w, http.StatusOK, product)
 
+}
+
+func (cfg *ApiConfig) handlerDeleteProduct(w http.ResponseWriter, r *http.Request) {
+	isAdmin, err := checkAdmin(r)
+	if !isAdmin || err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	ID := r.PathValue("ID")
+	id, err := uuid.Parse(ID)
+	if err != nil {
+		http.Error(w, "Couldn't parse uuid", http.StatusBadRequest)
+		return
+	}
+
+	err = cfg.db.DeleteProductById(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondWithJson(w, http.StatusNoContent, struct{}{})
 }

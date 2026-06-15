@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../stores/authStore";
 import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import LanguageSwitcher from "../components/ui/LanguageSwitcher";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,9 +28,9 @@ export default function LoginPage() {
       navigate("/products", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.message || "Invalid credentials");
+        setError(err.message || t("login.invalidCredentials"));
       } else {
-        setError("Login failed. Please try again.");
+        setError(t("login.loginFailed"));
       }
     } finally {
       setLoading(false);
@@ -41,6 +44,9 @@ export default function LoginPage() {
       <div className="pointer-events-none absolute -bottom-40 -right-24 h-96 w-96 rounded-full bg-brand-700/20 blur-3xl" />
 
       <div className="animate-scale-in relative w-full max-w-sm rounded-2xl border border-white/10 bg-white/95 p-8 shadow-2xl backdrop-blur">
+        <div className="mb-6 flex justify-end">
+          <LanguageSwitcher />
+        </div>
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="mb-3 text-brand-600">
             <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
@@ -48,8 +54,8 @@ export default function LoginPage() {
               <path d="M12 2v20M3 7l9 5 9-5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Forest True</h1>
-          <p className="mt-1 text-sm text-slate-500">Sign in to your account</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t("common.brand")}</h1>
+          <p className="mt-1 text-sm text-slate-500">{t("login.subtitle")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -65,8 +71,8 @@ export default function LoginPage() {
 
           <Input
             id="login-username"
-            label="Username"
-            placeholder="Enter your username"
+            label={t("login.username")}
+            placeholder={t("login.usernamePlaceholder")}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
@@ -75,9 +81,9 @@ export default function LoginPage() {
 
           <Input
             id="login-password"
-            label="Password"
+            label={t("login.password")}
             type="password"
-            placeholder="Enter your password"
+            placeholder={t("login.passwordPlaceholder")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
@@ -85,12 +91,12 @@ export default function LoginPage() {
           />
 
           <Button type="submit" size="lg" fullWidth loading={loading}>
-            Sign In
+            {t("login.signIn")}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-xs text-slate-400">
-          Furniture management platform
+          {t("login.tagline")}
         </p>
       </div>
     </div>

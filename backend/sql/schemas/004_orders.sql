@@ -2,8 +2,8 @@
 
 CREATE TABLE orders (
     id UUID PRIMARY KEY,
-    status TEXT NOT NULL,
-    excel_url TEXT,
+    title TEXT NOT NULL,
+    excel_url TEXT NOT NULL,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL

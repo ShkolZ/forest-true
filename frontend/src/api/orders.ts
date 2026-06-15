@@ -2,6 +2,7 @@ import { apiClient } from "./client";
 import type { Order, OrderItem } from "../types";
 
 export interface CreateOrderPayload {
+  title: string;
   items: Array<{ product_id: string; quantity: number }>;
 }
 

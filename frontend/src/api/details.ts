@@ -25,5 +25,9 @@ export const detailsApi = {
   create: (data: CreateDetailPayload) =>
     apiClient.post<Detail>("/details", data),
 
+  // PUT /api/details/:id — full replace of a part (send the complete body).
+  update: (id: string, data: CreateDetailPayload) =>
+    apiClient.put<Detail>(`/details/${id}`, data),
+
   delete: (id: string) => apiClient.delete<void>(`/details/${id}`),
 };

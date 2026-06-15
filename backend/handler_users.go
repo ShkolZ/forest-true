@@ -144,3 +144,26 @@ func (cfg *ApiConfig) handlerGetUsers(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJson(w, http.StatusOK, users)
 }
+
+func (cfg *ApiConfig) handlerDeleteUser(w http.ResponseWriter, r *http.Request) {
+	isAdmin, err := checkAdmin(r)
+	if !isAdmin || err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	ID := r.PathValue("ID")
+	id, err := uuid.Parse(ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = cfg.db.DeleteUserById(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondWithJson(w, http.StatusNoContent, struct{}{})
+}

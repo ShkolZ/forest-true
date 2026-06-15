@@ -1,8 +1,11 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../stores/authStore";
 import { useCartStore } from "../../stores/cartStore";
+import LanguageSwitcher from "../ui/LanguageSwitcher";
 
 export default function AppLayout() {
+  const { t } = useTranslation();
   const { user, isAdmin, logout } = useAuthStore();
   const items = useCartStore((s) => s.items);
   const navigate = useNavigate();
@@ -22,10 +25,11 @@ export default function AppLayout() {
               <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" stroke="currentColor" strokeWidth="1.5" fill="rgba(16,185,129,0.15)" />
               <path d="M12 2v20M3 7l9 5 9-5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
             </svg>
-            <span className="text-lg font-semibold text-slate-900">Forest True</span>
+            <span className="text-lg font-semibold text-slate-900">{t("common.brand")}</span>
           </Link>
 
           <nav className="flex items-center gap-3">
+            <LanguageSwitcher />
             {isAdmin && (
               <Link
                 to="/dashboard/products"
@@ -37,7 +41,7 @@ export default function AppLayout() {
                   <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
                   <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
                 </svg>
-                Dashboard
+                {t("common.dashboard")}
               </Link>
             )}
 
@@ -59,7 +63,7 @@ export default function AppLayout() {
               </div>
               <button
                 onClick={handleLogout}
-                title="Logout"
+                title={t("common.logout")}
                 className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-red-600"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">

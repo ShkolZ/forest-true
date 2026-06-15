@@ -45,7 +45,7 @@ export default function Toast({
   }, [duration, onClose]);
 
   return (
-    <div className="animate-slide-in-right flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-lg">
+    <div className="animate-slide-in-right flex select-none items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-lg">
       <span className={accents[type]}>{icons[type]}</span>
       <span className="text-sm font-medium text-slate-700">{message}</span>
       <button

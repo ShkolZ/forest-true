@@ -40,6 +40,7 @@ type ApiConfig struct {
 	s3Client        *s3.Client
 	s3PublicBucket  *string
 	s3PrivateBucket *string
+	domainName      string
 }
 
 func main() {
@@ -95,6 +96,11 @@ func main() {
 		log.Fatalf("Couldn't create s3 client: %v\n")
 	}
 
+	domainName := os.Getenv("DOMAIN_NAME")
+	if domainName == "" {
+		log.Fatalln("Couldn't get domain name")
+	}
+
 	queries := database.New(conn)
 
 	cfg := ApiConfig{
@@ -103,12 +109,10 @@ func main() {
 		s3Client:        s3Client,
 		s3PublicBucket:  &public,
 		s3PrivateBucket: &private,
+		domainName:      domainName,
 	}
 
 	mux := http.NewServeMux()
-
-	appHandler := http.StripPrefix("/frontend", http.FileServer(http.Dir("../frontend")))
-	mux.Handle("/frontend/", appHandler)
 
 	// GET REQUESTS
 	mux.HandleFunc("GET /api/products", cfg.handlerGetProducts)
@@ -121,9 +125,15 @@ func main() {
 	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
 	mux.HandleFunc("POST /api/details", cfg.AuthMiddleware(cfg.handlerPostDetails))
 	mux.HandleFunc("POST /api/products", cfg.AuthMiddleware(cfg.handlerPostProducts))
+	mux.HandleFunc("POST /api/orders", cfg.AuthMiddleware(cfg.handlerPostOrders))
 
 	// DELETE REQUESTS
 	mux.HandleFunc("DELETE /api/details/{ID}", cfg.AuthMiddleware(cfg.handlerDeleteDetail))
+	mux.HandleFunc("DELETE /api/products/{ID}", cfg.AuthMiddleware(cfg.handlerDeleteProduct))
+	mux.HandleFunc("DELETE /api/users/{ID}", cfg.AuthMiddleware(cfg.handlerDeleteUser))
+
+	// PUT REQUESTS
+	mux.HandleFunc("PUT /api/details/{ID}", cfg.AuthMiddleware(cfg.handlerPutDetail))
 
 	srv := &http.Server{
 		Addr:    ":" + port,
