@@ -20,7 +20,7 @@ export default function AppLayout() {
     <div className="min-h-screen bg-slate-50">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <Link to="/products" className="flex items-center gap-2 text-brand-700">
+          <Link to="/products" className="flex select-none items-center gap-2 text-brand-700">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
               <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" stroke="currentColor" strokeWidth="1.5" fill="rgba(16,185,129,0.15)" />
               <path d="M12 2v20M3 7l9 5 9-5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />

@@ -5,7 +5,6 @@
 package database
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,12 +26,12 @@ type Detail struct {
 }
 
 type Order struct {
-	ID        uuid.UUID      `json:"id"`
-	Status    string         `json:"status"`
-	ExcelUrl  sql.NullString `json:"excel_url"`
-	UserID    uuid.UUID      `json:"user_id"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	ID        uuid.UUID `json:"id"`
+	Title     string    `json:"title"`
+	ExcelUrl  string    `json:"excel_url"`
+	UserID    uuid.UUID `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type OrderItem struct {

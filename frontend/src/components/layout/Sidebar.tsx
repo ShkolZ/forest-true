@@ -53,7 +53,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-forest-800 bg-forest-900 text-slate-300">
       <div className="border-b border-white/10 px-5 py-5">
-        <Link to="/products" className="flex items-center gap-3 text-brand-300">
+        <Link to="/products" className="flex select-none items-center gap-3 text-brand-300">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
             <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" stroke="currentColor" strokeWidth="1.5" fill="rgba(16,185,129,0.2)" />
             <path d="M12 2v20M3 7l9 5 9-5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />

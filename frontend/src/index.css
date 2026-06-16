@@ -34,6 +34,18 @@ body {
   -webkit-font-smoothing: antialiased;
   background-color: #f8fafc; /* slate-50 */
   color: #0f172a; /* slate-900 */
+  /* App-like UI: clicking chrome (table rows, buttons, links, labels) should
+     not drop a text caret or start a selection. Real input fields re-enable
+     it below. Add `select-text` to any element whose text should be copyable. */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* Reusable keyframe-backed animation utilities */

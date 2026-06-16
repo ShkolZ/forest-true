@@ -7,31 +7,30 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 const createOrder = `-- name: CreateOrder :one
-INSERT INTO orders (id, status, excel_url, user_id, created_at, updated_at)
+INSERT INTO orders (id, title, excel_url, user_id, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, status, excel_url, user_id, created_at, updated_at
+RETURNING id, title, excel_url, user_id, created_at, updated_at
 `
 
 type CreateOrderParams struct {
-	ID        uuid.UUID      `json:"id"`
-	Status    string         `json:"status"`
-	ExcelUrl  sql.NullString `json:"excel_url"`
-	UserID    uuid.UUID      `json:"user_id"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	ID        uuid.UUID `json:"id"`
+	Title     string    `json:"title"`
+	ExcelUrl  string    `json:"excel_url"`
+	UserID    uuid.UUID `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order, error) {
 	row := q.db.QueryRowContext(ctx, createOrder,
 		arg.ID,
-		arg.Status,
+		arg.Title,
 		arg.ExcelUrl,
 		arg.UserID,
 		arg.CreatedAt,
@@ -40,7 +39,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 	var i Order
 	err := row.Scan(
 		&i.ID,
-		&i.Status,
+		&i.Title,
 		&i.ExcelUrl,
 		&i.UserID,
 		&i.CreatedAt,
@@ -59,7 +58,7 @@ func (q *Queries) DeleteOrderById(ctx context.Context, id uuid.UUID) error {
 }
 
 const getAllOrders = `-- name: GetAllOrders :many
-SELECT id, status, excel_url, user_id, created_at, updated_at FROM orders
+SELECT id, title, excel_url, user_id, created_at, updated_at FROM orders
 `
 
 func (q *Queries) GetAllOrders(ctx context.Context) ([]Order, error) {
@@ -73,7 +72,7 @@ func (q *Queries) GetAllOrders(ctx context.Context) ([]Order, error) {
 		var i Order
 		if err := rows.Scan(
 			&i.ID,
-			&i.Status,
+			&i.Title,
 			&i.ExcelUrl,
 			&i.UserID,
 			&i.CreatedAt,
@@ -93,7 +92,7 @@ func (q *Queries) GetAllOrders(ctx context.Context) ([]Order, error) {
 }
 
 const getOrderById = `-- name: GetOrderById :one
-SELECT id, status, excel_url, user_id, created_at, updated_at FROM orders WHERE id = $1
+SELECT id, title, excel_url, user_id, created_at, updated_at FROM orders WHERE id = $1
 `
 
 func (q *Queries) GetOrderById(ctx context.Context, id uuid.UUID) (Order, error) {
@@ -101,7 +100,7 @@ func (q *Queries) GetOrderById(ctx context.Context, id uuid.UUID) (Order, error)
 	var i Order
 	err := row.Scan(
 		&i.ID,
-		&i.Status,
+		&i.Title,
 		&i.ExcelUrl,
 		&i.UserID,
 		&i.CreatedAt,
@@ -112,29 +111,29 @@ func (q *Queries) GetOrderById(ctx context.Context, id uuid.UUID) (Order, error)
 
 const updateOrderById = `-- name: UpdateOrderById :one
 UPDATE orders
-SET status = $2, excel_url = $3, updated_at = $4
+SET title = $2, excel_url = $3, updated_at = $4
 WHERE id = $1
-RETURNING id, status, excel_url, user_id, created_at, updated_at
+RETURNING id, title, excel_url, user_id, created_at, updated_at
 `
 
 type UpdateOrderByIdParams struct {
-	ID        uuid.UUID      `json:"id"`
-	Status    string         `json:"status"`
-	ExcelUrl  sql.NullString `json:"excel_url"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	ID        uuid.UUID `json:"id"`
+	Title     string    `json:"title"`
+	ExcelUrl  string    `json:"excel_url"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (q *Queries) UpdateOrderById(ctx context.Context, arg UpdateOrderByIdParams) (Order, error) {
 	row := q.db.QueryRowContext(ctx, updateOrderById,
 		arg.ID,
-		arg.Status,
+		arg.Title,
 		arg.ExcelUrl,
 		arg.UpdatedAt,
 	)
 	var i Order
 	err := row.Scan(
 		&i.ID,
-		&i.Status,
+		&i.Title,
 		&i.ExcelUrl,
 		&i.UserID,
 		&i.CreatedAt,

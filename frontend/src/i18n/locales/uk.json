@@ -1,6 +1,6 @@
 {
   "common": {
-    "brand": "Forest True",
+    "brand": "Forest",
     "cancel": "Скасувати",
     "saveChanges": "Зберегти зміни",
     "edit": "Редагувати",
@@ -95,9 +95,9 @@
     "failedRemovePart": "Не вдалося прибрати деталь",
     "side": {
       "top": "Верх",
-      "left": "Ліворуч",
+      "left": "Ліво",
       "bottom": "Низ",
-      "right": "Праворуч"
+      "right": "Право"
     }
   },
   "users": {
