@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/ShkolZ/forest-true/internal/database"
 	"github.com/google/uuid"
@@ -69,7 +70,6 @@ func createExcel(params OrderParams, db *database.Queries) (string, error) {
 		}
 		fmt.Println(parts)
 		for range item.Quantity {
-
 			for _, part := range parts {
 				err := f.SetSheetRow(
 					sheet,
@@ -83,11 +83,29 @@ func createExcel(params OrderParams, db *database.Queries) (string, error) {
 		}
 	}
 
-	err = f.SaveAs(fmt.Sprintf("%v/%v.xlsx", "/home/shkolz", hexString))
+	excelPath := fmt.Sprintf("%v/%v.xlsx", "/tmp", hexString)
+	err = f.SaveAs(excelPath)
 	if err != nil {
+		return "", err
 	}
-	// for _, item := range params.Items {
 
-	// }
-	return "", nil
+	return excelPath, nil
+}
+
+func createOrderItems(params OrderParams, db *database.Queries, orderID uuid.UUID) error {
+	for _, item := range params.Items {
+		itemID, _ := uuid.NewUUID()
+		productUUID, _ := uuid.Parse(item.ProductID)
+		_, err := db.CreateOrderItem(context.Background(), database.CreateOrderItemParams{
+			ID:        itemID,
+			Quantity:  int32(item.Quantity),
+			OrderID:   orderID,
+			ProductID: productUUID,
+			CreatedAt: time.Now(),
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
