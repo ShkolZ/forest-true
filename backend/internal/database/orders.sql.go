@@ -91,6 +91,54 @@ func (q *Queries) GetAllOrders(ctx context.Context) ([]Order, error) {
 	return items, nil
 }
 
+const getAllOrdersWithUsername = `-- name: GetAllOrdersWithUsername :many
+SELECT users.username, orders.id, orders.title, orders.excel_url, orders.user_id, orders.created_at, orders.updated_at
+FROM orders
+JOIN users ON orders.user_id = users.id
+ORDER BY orders.created_at DESC
+`
+
+type GetAllOrdersWithUsernameRow struct {
+	Username  string    `json:"username"`
+	ID        uuid.UUID `json:"id"`
+	Title     string    `json:"title"`
+	ExcelUrl  string    `json:"excel_url"`
+	UserID    uuid.UUID `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (q *Queries) GetAllOrdersWithUsername(ctx context.Context) ([]GetAllOrdersWithUsernameRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllOrdersWithUsername)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllOrdersWithUsernameRow
+	for rows.Next() {
+		var i GetAllOrdersWithUsernameRow
+		if err := rows.Scan(
+			&i.Username,
+			&i.ID,
+			&i.Title,
+			&i.ExcelUrl,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getOrderById = `-- name: GetOrderById :one
 SELECT id, title, excel_url, user_id, created_at, updated_at FROM orders WHERE id = $1
 `

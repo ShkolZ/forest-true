@@ -30,6 +30,7 @@ export interface Order {
   title: string
   excel_url?: string
   user_id: string
+  username: string
   created_at: string
   updated_at?: string
 }
@@ -39,7 +40,8 @@ export interface OrderItem {
   quantity: number
   order_id: string
   product_id: string
-  product?: Product
+  product_name: string
+  product_image_url?: string
   created_at: string
 }
 

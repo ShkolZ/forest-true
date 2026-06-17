@@ -140,6 +140,12 @@
     "userId": "User ID",
     "createdAt": "Created",
     "downloadFile": "Download File",
+    "items": "Items",
+    "qty": "Qty: {{count}}",
+    "noItems": "No items in this order.",
+    "loadingItems": "Loading items…",
+    "failedLoadItems": "Failed to load order items",
+    "failedDownload": "Failed to get download link",
     "failedLoad": "Failed to load orders"
   }
 }

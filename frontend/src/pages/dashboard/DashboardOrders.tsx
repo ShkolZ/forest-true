@@ -5,7 +5,7 @@ import { useToast } from "../../hooks/useToast";
 import Table from "../../components/ui/Table";
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
-import type { Column, Order } from "../../types";
+import type { Column, Order, OrderItem } from "../../types";
 
 export default function DashboardOrders() {
   const { t, i18n } = useTranslation();
@@ -13,6 +13,8 @@ export default function DashboardOrders() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [items, setItems] = useState<OrderItem[]>([]);
+  const [itemsLoading, setItemsLoading] = useState(false);
   const { addToast } = useToast();
 
   const loadOrders = useCallback(async () => {
@@ -32,9 +34,28 @@ export default function DashboardOrders() {
     })();
   }, [loadOrders]);
 
-  const openDetails = (order: Order) => {
+  const openDetails = async (order: Order) => {
     setSelectedOrder(order);
     setDetailsOpen(true);
+    setItems([]);
+    setItemsLoading(true);
+    try {
+      const data = await ordersApi.getItems(order.id);
+      setItems(data || []);
+    } catch {
+      addToast(t("orders.failedLoadItems"), "error");
+    } finally {
+      setItemsLoading(false);
+    }
+  };
+
+  const downloadExcel = async (orderId: string) => {
+    try {
+      const { url } = await ordersApi.getDownloadUrl(orderId);
+      window.open(url, "_blank", "noopener");
+    } catch {
+      addToast(t("orders.failedDownload"), "error");
+    }
   };
 
   const mono = "font-mono text-xs text-slate-500";
@@ -55,25 +76,24 @@ export default function DashboardOrders() {
       ),
     },
     {
-      key: "user_id",
+      key: "username",
       label: t("orders.user"),
       render: (val) => (
-        <span className={mono}>{val ? String(val).slice(0, 8) + "…" : "—"}</span>
+        <span className="text-slate-700">{String(val ?? "") || "—"}</span>
       ),
     },
     {
       key: "excel_url",
       label: t("orders.excel"),
-      render: (val) =>
+      render: (val, row) =>
         val ? (
-          <a
-            href={String(val)}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={() => void downloadExcel(row.id)}
             className="font-medium text-brand-600 hover:underline"
           >
             {t("orders.download")}
-          </a>
+          </button>
         ) : (
           <span className="text-slate-300">—</span>
         ),
@@ -90,7 +110,7 @@ export default function DashboardOrders() {
       width: "100px",
       render: (_, row) => (
         <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={() => openDetails(row)}>
+          <Button variant="ghost" size="sm" onClick={() => void openDetails(row)}>
             {t("orders.view")}
           </Button>
         </div>
@@ -131,6 +151,11 @@ export default function DashboardOrders() {
             <Row label={t("orders.orderId")}>
               <span className={mono}>{selectedOrder.id}</span>
             </Row>
+            <Row label={t("orders.user")}>
+              <span className="text-sm font-medium text-slate-800">
+                {selectedOrder.username || "—"}
+              </span>
+            </Row>
             <Row label={t("orders.userId")}>
               <span className={mono}>{selectedOrder.user_id}</span>
             </Row>
@@ -141,16 +166,46 @@ export default function DashboardOrders() {
             </Row>
             {selectedOrder.excel_url && (
               <Row label={t("orders.excel")}>
-                <a
-                  href={selectedOrder.excel_url}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  type="button"
+                  onClick={() => void downloadExcel(selectedOrder.id)}
                   className="font-medium text-brand-600 hover:underline"
                 >
                   {t("orders.downloadFile")}
-                </a>
+                </button>
               </Row>
             )}
+
+            <div className="mt-2 border-t border-slate-100 pt-3">
+              <h3 className="mb-2 text-sm font-semibold text-slate-700">
+                {t("orders.items")}
+              </h3>
+              {itemsLoading ? (
+                <p className="text-sm text-slate-400">{t("orders.loadingItems")}</p>
+              ) : items.length > 0 ? (
+                <ul className="flex flex-col gap-2">
+                  {items.map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex items-center justify-between gap-4 rounded-lg bg-slate-50 px-3 py-2"
+                    >
+                      <span className="text-sm font-medium text-slate-800">
+                        {item.product_name || (
+                          <span className={mono}>
+                            {item.product_id.slice(0, 8)}…
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-sm text-slate-500">
+                        {t("orders.qty", { count: item.quantity })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-slate-400">{t("orders.noItems")}</p>
+              )}
+            </div>
           </div>
         )}
       </Modal>

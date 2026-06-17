@@ -109,3 +109,12 @@ func createOrderItems(params OrderParams, db *database.Queries, orderID uuid.UUI
 	}
 	return nil
 }
+
+func getPathValueUUID(r *http.Request) (uuid.UUID, error) {
+	orderStringID := r.PathValue("ID")
+	orderID, err := uuid.Parse(orderStringID)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	return orderID, nil
+}

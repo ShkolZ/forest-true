@@ -96,24 +96,40 @@ func (q *Queries) GetOrderItemById(ctx context.Context, id uuid.UUID) (OrderItem
 }
 
 const getOrderItemsByOrderId = `-- name: GetOrderItemsByOrderId :many
-SELECT id, quantity, order_id, product_id, created_at FROM order_items WHERE order_id = $1
+SELECT order_items.id, order_items.quantity, order_items.order_id, order_items.product_id, order_items.created_at, products.name AS product_name, products.image_url AS product_image_url
+FROM order_items
+JOIN products ON order_items.product_id = products.id
+WHERE order_items.order_id = $1
+ORDER BY order_items.created_at DESC
 `
 
-func (q *Queries) GetOrderItemsByOrderId(ctx context.Context, orderID uuid.UUID) ([]OrderItem, error) {
+type GetOrderItemsByOrderIdRow struct {
+	ID              uuid.UUID `json:"id"`
+	Quantity        int32     `json:"quantity"`
+	OrderID         uuid.UUID `json:"order_id"`
+	ProductID       uuid.UUID `json:"product_id"`
+	CreatedAt       time.Time `json:"created_at"`
+	ProductName     string    `json:"product_name"`
+	ProductImageUrl string    `json:"product_image_url"`
+}
+
+func (q *Queries) GetOrderItemsByOrderId(ctx context.Context, orderID uuid.UUID) ([]GetOrderItemsByOrderIdRow, error) {
 	rows, err := q.db.QueryContext(ctx, getOrderItemsByOrderId, orderID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []OrderItem
+	var items []GetOrderItemsByOrderIdRow
 	for rows.Next() {
-		var i OrderItem
+		var i GetOrderItemsByOrderIdRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Quantity,
 			&i.OrderID,
 			&i.ProductID,
 			&i.CreatedAt,
+			&i.ProductName,
+			&i.ProductImageUrl,
 		); err != nil {
 			return nil, err
 		}

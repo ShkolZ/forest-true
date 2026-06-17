@@ -18,4 +18,8 @@ export const ordersApi = {
 
   getItems: (orderId: string) =>
     apiClient.get<OrderItem[]>(`/orders/${orderId}/items`),
+
+  // Returns a short-lived signed URL for the order's Excel file.
+  getDownloadUrl: (orderId: string) =>
+    apiClient.get<{ url: string }>(`/orders/${orderId}/download`),
 };

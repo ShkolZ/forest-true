@@ -120,6 +120,8 @@ func main() {
 	mux.HandleFunc("GET /api/products/{ID}/details", cfg.handlerGetDetails)
 	mux.HandleFunc("GET /api/me", cfg.AuthMiddleware(cfg.handlerMe))
 	mux.HandleFunc("GET /api/orders", cfg.AuthMiddleware(cfg.handlerGetOrders))
+	mux.HandleFunc("GET /api/orders/{ID}/items", cfg.AuthMiddleware(cfg.handlerGetOrderItems))
+	mux.HandleFunc("GET /api/orders/{ID}/download", cfg.AuthMiddleware(cfg.handlerDownloadExcel))
 
 	// POST REQUESTS
 	mux.HandleFunc("POST /api/register", cfg.AuthMiddleware(cfg.handlerRegister))
