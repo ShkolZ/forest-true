@@ -21,8 +21,7 @@ func respondWithJson(w http.ResponseWriter, status int, str any) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	log.Println(string(data))
+	log.Println("\033[32mSuccessful response\033[0m")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write(data)
@@ -49,7 +48,7 @@ func createExcel(params OrderParams, db *database.Queries) (string, error) {
 	f := excelize.NewFile()
 	defer f.Close()
 	sheet := "Sheet1"
-	err := f.SetSheetRow(sheet, "A1", &[]any{"Матеріал", "Довжина", "Ширина", "Кількість", "Текстура", "Найменування", "ОВ", "ОН", "ОЛ", "ОП", "Опис"})
+	err := f.SetSheetRow(sheet, "A1", &[]any{"Деталь", "Довжина", "Ширина", "Кількість", "ОВ", "ОН", "ОЛ", "ОП"})
 	if err != nil {
 		return "", nil
 	}
@@ -60,24 +59,24 @@ func createExcel(params OrderParams, db *database.Queries) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		product, err := db.GetProductById(context.Background(), pId)
-		if err != nil {
-			return "", err
-		}
+		// product, err := db.GetProductById(context.Background(), pId)
+		// if err != nil {
+		// 	return "", err
+		// }
 		parts, err := db.GetDetailsByProduct(context.Background(), pId)
 		if err != nil {
 			return "", err
 		}
-		fmt.Println(parts)
 		for range item.Quantity {
 			for _, part := range parts {
 				err := f.SetSheetRow(
 					sheet,
 					fmt.Sprintf("A%v", row),
-					&[]any{part.Name, part.Length, part.Width, part.Amount, 0, 0, part.KTop, part.KBottom, part.KLeft, part.KRight, product.Name})
+					&[]any{part.Name, part.Length, part.Width, part.Amount, btoi(part.KTop), btoi(part.KBottom), btoi(part.KLeft), btoi(part.KRight)})
 				if err != nil {
+					return "", err
 				}
-				fmt.Println(err)
+
 				row++
 			}
 		}
@@ -117,4 +116,11 @@ func getPathValueUUID(r *http.Request) (uuid.UUID, error) {
 		return uuid.UUID{}, err
 	}
 	return orderID, nil
+}
+
+func btoi(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }

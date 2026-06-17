@@ -8,6 +8,7 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const { user, isAdmin, logout } = useAuthStore();
   const items = useCartStore((s) => s.items);
+  const toggleCart = useCartStore((s) => s.toggleCart);
   const navigate = useNavigate();
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
 
@@ -45,17 +46,22 @@ export default function AppLayout() {
               </Link>
             )}
 
-            <div className="relative text-slate-600">
+            <button
+              onClick={toggleCart}
+              title={t("storefront.yourOrder")}
+              aria-label={t("storefront.yourOrder")}
+              className="relative rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100"
+            >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" strokeWidth="1.5" />
                 <path d="M3 6h18M16 10a4 4 0 01-8 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               {totalItems > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-xs font-semibold text-white">
+                <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-xs font-semibold text-white">
                   {totalItems}
                 </span>
               )}
-            </div>
+            </button>
 
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -59,7 +60,7 @@ func (cfg *ApiConfig) handlerRegister(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		http.Error(w, "Couldn't create a user", http.StatusBadRequest)
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
@@ -99,8 +100,6 @@ func (cfg *ApiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Password did not match", http.StatusUnauthorized)
 		return
 	}
-
-	fmt.Println(user.IsAdmin)
 
 	jwtToken, err := auth.MakeJWT(user.ID, user.IsAdmin, cfg.tokenSecret, time.Minute*30)
 	if err != nil {

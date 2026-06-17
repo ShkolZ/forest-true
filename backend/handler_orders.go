@@ -46,7 +46,6 @@ func (cfg *ApiConfig) handlerPostOrders(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(excelPath)
 
 	defer os.Remove(tf.Name())
 	defer tf.Close()
@@ -165,7 +164,7 @@ func (cfg *ApiConfig) handlerDownloadExcel(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	split := strings.Split(order.ExcelUrl, fmt.Sprintf("%v/", *cfg.s3PrivateBucket))
-	pc := s3.NewPresignClient(cfg.s3Client)
+	pc := s3.NewPresignClient(cfg.s3PrivateClient)
 	req, err := pc.PresignGetObject(r.Context(), &s3.GetObjectInput{
 		Bucket: cfg.s3PrivateBucket,
 		Key:    &split[1],
@@ -175,11 +174,13 @@ func (cfg *ApiConfig) handlerDownloadExcel(w http.ResponseWriter, r *http.Reques
 		log.Println(err)
 		return
 	}
+	downloadURL := strings.Replace(
+		req.URL, cfg.domainName+"/", cfg.domainName+"/s3/", 1,
+	)
 
 	res := urlResponse{
-		Url: req.URL,
+		Url: downloadURL,
 	}
-	fmt.Println(res)
 
 	respondWithJson(w, http.StatusOK, res)
 }

@@ -75,7 +75,7 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, bool, error) {
 	if err != nil {
 		return uuid.Nil, false, err
 	}
-	fmt.Println(claimsStruct.IsAdmin)
+
 	issuer, err := token.Claims.GetIssuer()
 	if err != nil {
 		return uuid.Nil, false, err

@@ -8,6 +8,7 @@ import { ApiError } from "../api/client";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import Modal from "../components/ui/Modal";
 import Spinner from "../components/ui/Spinner";
 import type { Product } from "../types";
 
@@ -19,8 +20,15 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [orderTitle, setOrderTitle] = useState("");
 
-  const { items, addItem, removeItem, updateQuantity, clearCart } =
-    useCartStore();
+  const {
+    items,
+    isOpen,
+    closeCart,
+    addItem,
+    removeItem,
+    updateQuantity,
+    clearCart,
+  } = useCartStore();
   const { addToast } = useToast();
 
   const loadProducts = useCallback(async () => {
@@ -63,6 +71,7 @@ export default function ProductsPage() {
         })),
       });
       clearCart();
+      closeCart();
       setOrderTitle("");
       addToast(t("storefront.orderSubmitted"), "success");
     } catch (err) {
@@ -92,13 +101,15 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8 lg:flex-row">
-      <div className="flex-1">
-        <div className="animate-fade-in mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">
+    <div className="animate-fade-in">
+      <div>
+        <div className="mb-5 sm:mb-6">
+          <h1 className="text-xl font-bold text-slate-900 sm:text-2xl lg:text-3xl">
             {t("storefront.title")}
           </h1>
-          <p className="mt-1 text-slate-500">{t("storefront.subtitle")}</p>
+          <p className="mt-1 text-sm text-slate-500 sm:text-base">
+            {t("storefront.subtitle")}
+          </p>
         </div>
 
         {products.length === 0 ? (
@@ -114,7 +125,7 @@ export default function ProductsPage() {
             <p>{t("storefront.empty")}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-4 sm:gap-5">
             {products.map((product) => {
               const qty = getItemQuantity(product.id);
               return (
@@ -154,9 +165,9 @@ export default function ProductsPage() {
                         {t("storefront.addToOrder")}
                       </Button>
                     ) : (
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
                         <button
-                          className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50"
                           onClick={() => updateQuantity(product.id, qty - 1)}
                         >
                           <svg
@@ -173,11 +184,11 @@ export default function ProductsPage() {
                             />
                           </svg>
                         </button>
-                        <span className="min-w-8 text-center font-semibold text-slate-900">
+                        <span className="min-w-8 flex-1 text-center font-semibold text-slate-900">
                           {qty}
                         </span>
                         <button
-                          className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50"
                           onClick={() => updateQuantity(product.id, qty + 1)}
                         >
                           <svg
@@ -195,7 +206,7 @@ export default function ProductsPage() {
                           </svg>
                         </button>
                         <button
-                          className="ml-auto flex h-8 w-8 items-center justify-center rounded-md text-red-500 hover:bg-red-50"
+                          className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-red-500 hover:bg-red-50"
                           onClick={() => removeItem(product.id)}
                           title={t("common.remove")}
                         >
@@ -223,76 +234,81 @@ export default function ProductsPage() {
         )}
       </div>
 
-      {items.length > 0 && (
-        <aside className="animate-slide-in-right h-fit w-full shrink-0 rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-24 lg:w-80">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">
-              {t("storefront.yourOrder")}
-            </h3>
-            <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
-              {t("storefront.itemsCount", {
-                count: items.reduce((s, i) => s + i.quantity, 0),
-              })}
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            {items.map((item) => (
-              <div
-                key={item.productId}
-                className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2"
-              >
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-slate-800">
-                    {item.product.name}
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    {t("storefront.qty", { count: item.quantity })}
-                  </span>
-                </div>
-                <button
-                  className="text-slate-400 hover:text-red-600"
-                  onClick={() => removeItem(item.productId)}
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path
-                      d="M10.5 3.5L3.5 10.5M3.5 3.5l7 7"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
+      <Modal
+        isOpen={isOpen}
+        onClose={closeCart}
+        title={t("storefront.yourOrder")}
+        size="sm"
+      >
+        <div className="flex flex-col gap-4">
+          {items.length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-400">
+              {t("storefront.emptyCart")}
+            </p>
+          ) : (
+            <>
+              <span className="self-start rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
+                {t("storefront.itemsCount", {
+                  count: items.reduce((s, i) => s + i.quantity, 0),
+                })}
+              </span>
+              <div className="flex max-h-[45vh] flex-col gap-2 overflow-y-auto">
+                {items.map((item) => (
+                  <div
+                    key={item.productId}
+                    className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2"
+                  >
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm font-medium text-slate-800">
+                        {item.product.name}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {t("storefront.qty", { count: item.quantity })}
+                      </span>
+                    </div>
+                    <button
+                      className="ml-2 shrink-0 text-slate-400 hover:text-red-600"
+                      onClick={() => removeItem(item.productId)}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path
+                          d="M10.5 3.5L3.5 10.5M3.5 3.5l7 7"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
 
-          <div className="mt-4">
-            <Input
-              id="order-title"
-              label={t("storefront.orderTitle")}
-              value={orderTitle}
-              onChange={(e) => setOrderTitle(e.target.value)}
-              placeholder={t("storefront.orderTitlePlaceholder")}
-              required
-            />
-          </div>
+          <Input
+            id="order-title"
+            label={t("storefront.orderTitle")}
+            value={orderTitle}
+            onChange={(e) => setOrderTitle(e.target.value)}
+            placeholder={t("storefront.orderTitlePlaceholder")}
+            required
+          />
 
-          <div className="mt-4 flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2">
             <Button variant="ghost" size="sm" onClick={clearCart}>
               {t("storefront.clearAll")}
             </Button>
             <Button
               size="md"
               loading={submitting}
-              disabled={!orderTitle.trim()}
+              disabled={!orderTitle.trim() || items.length === 0}
               onClick={handleSubmitOrder}
             >
               {t("storefront.submitOrder")}
             </Button>
           </div>
-        </aside>
-      )}
+        </div>
+      </Modal>
     </div>
   );
 }

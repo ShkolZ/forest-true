@@ -3,6 +3,10 @@ import type { CartItem, Product } from '../types'
 
 interface CartStore {
   items: CartItem[]
+  isOpen: boolean
+  openCart: () => void
+  closeCart: () => void
+  toggleCart: () => void
   addItem: (product: Product) => void
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
@@ -11,6 +15,11 @@ interface CartStore {
 
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
+  isOpen: false,
+
+  openCart: () => set({ isOpen: true }),
+  closeCart: () => set({ isOpen: false }),
+  toggleCart: () => set({ isOpen: !get().isOpen }),
 
   addItem: (product: Product) => {
     const items = get().items

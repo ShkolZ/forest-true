@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -34,8 +35,6 @@ func (cfg *ApiConfig) handlerGetProducts(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	fmt.Println(products)
-
 	respondWithJson(w, 200, products)
 
 }
@@ -52,12 +51,11 @@ func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request
 	f, fh, err := r.FormFile("image")
 	if err != nil {
 		http.Error(w, "Counldn't get image from form", http.StatusBadRequest)
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 		return
 	}
 
 	mediaType := fh.Header.Get("Content-Type")
-	fmt.Println(productDesc, productName, f, mediaType)
 	split := strings.Split(mediaType, "/")
 
 	if split[0] != "image" {
@@ -80,7 +78,6 @@ func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request
 	rdata := make([]byte, 32)
 	rand.Read(rdata)
 	hexString := hex.EncodeToString(rdata)
-	fmt.Println(tf.Stat())
 
 	key := fmt.Sprintf("%v/%v.%v", "images", hexString, split[1])
 
@@ -91,7 +88,6 @@ func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request
 	})
 
 	url := fmt.Sprintf("%v/%v/%v/%v", cfg.domainName, "s3", *cfg.s3PublicBucket, key)
-	fmt.Println(url)
 
 	cusUuid, _ := uuid.NewUUID()
 
@@ -105,7 +101,7 @@ func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request
 	})
 	if err != nil {
 		http.Error(w, "Couldn't create a product", http.StatusInternalServerError)
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 

@@ -38,6 +38,7 @@ type ApiConfig struct {
 	db              *database.Queries
 	tokenSecret     string
 	s3Client        *s3.Client
+	s3PrivateClient *s3.Client
 	s3PublicBucket  *string
 	s3PrivateBucket *string
 	domainName      string
@@ -91,14 +92,24 @@ func main() {
 		log.Fatalln("Couldn't get private bucket name")
 	}
 
+	domainName := os.Getenv("DOMAIN_NAME")
+	if domainName == "" {
+		log.Fatalln("Couldn't get domain name")
+	}
+
+	minioPrivateEndpoint := os.Getenv("MINIO_PRIVATE_ENDPOINT")
+	if minioPrivateEndpoint == "" {
+		log.Fatalln("Couldn't get private domain name")
+	}
+
 	s3Client, err := newS3Client(context.Background(), endpoint, accessKey, secretKey)
 	if err != nil {
 		log.Fatalf("Couldn't create s3 client: %v\n")
 	}
 
-	domainName := os.Getenv("DOMAIN_NAME")
-	if domainName == "" {
-		log.Fatalln("Couldn't get domain name")
+	s3PrivateClient, err := newS3Client(context.Background(), domainName, accessKey, secretKey)
+	if err != nil {
+		log.Fatalf("Couldn't create s3 private client \n")
 	}
 
 	queries := database.New(conn)
@@ -107,6 +118,7 @@ func main() {
 		db:              queries,
 		tokenSecret:     tokenSecret,
 		s3Client:        s3Client,
+		s3PrivateClient: s3PrivateClient,
 		s3PublicBucket:  &public,
 		s3PrivateBucket: &private,
 		domainName:      domainName,
