@@ -16,13 +16,13 @@ func (cfg *ApiConfig) handlerGetDetails(w http.ResponseWriter, r *http.Request) 
 
 	id, err := uuid.Parse(ID)
 	if err != nil {
-		http.Error(w, "Couldn't parse uuid", http.StatusBadRequest)
+		respondWithError(w, "Couldn't parse uuid", http.StatusBadRequest, err)
 		return
 	}
 
 	parts, err := cfg.db.GetDetailsByProduct(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Couldn't get parts", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't get parts", http.StatusInternalServerError, err)
 		return
 	}
 
@@ -32,7 +32,7 @@ func (cfg *ApiConfig) handlerGetDetails(w http.ResponseWriter, r *http.Request) 
 func (cfg *ApiConfig) handlerPostDetails(w http.ResponseWriter, r *http.Request) {
 	isAdmin, err := checkAdmin(r)
 	if !isAdmin || err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		respondWithError(w, err.Error(), http.StatusUnauthorized, err)
 		return
 	}
 
@@ -40,7 +40,7 @@ func (cfg *ApiConfig) handlerPostDetails(w http.ResponseWriter, r *http.Request)
 	decoder := json.NewDecoder(r.Body)
 	err = decoder.Decode(&params)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respondWithError(w, err.Error(), http.StatusBadRequest, err)
 		return
 	}
 	id, _ := uuid.NewUUID()
@@ -50,7 +50,7 @@ func (cfg *ApiConfig) handlerPostDetails(w http.ResponseWriter, r *http.Request)
 
 	part, err := cfg.db.CreateDetail(r.Context(), params)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondWithError(w, err.Error(), http.StatusInternalServerError, err)
 		return
 	}
 
@@ -61,20 +61,20 @@ func (cfg *ApiConfig) handlerPostDetails(w http.ResponseWriter, r *http.Request)
 func (cfg *ApiConfig) handlerDeleteDetail(w http.ResponseWriter, r *http.Request) {
 	isAdmin, err := checkAdmin(r)
 	if !isAdmin || err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		respondWithError(w, err.Error(), http.StatusUnauthorized, err)
 		return
 	}
 
 	ID := r.PathValue("ID")
 	id, err := uuid.Parse(ID)
 	if err != nil {
-		http.Error(w, "Couldn't parse uuid", http.StatusBadRequest)
+		respondWithError(w, "Couldn't parse uuid", http.StatusBadRequest, err)
 		return
 	}
 
 	err = cfg.db.DeleteDetailById(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Couldn't delete the part", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't delete the part", http.StatusInternalServerError, err)
 		return
 	}
 
@@ -85,21 +85,21 @@ func (cfg *ApiConfig) handlerDeleteDetail(w http.ResponseWriter, r *http.Request
 func (cfg *ApiConfig) handlerPutDetail(w http.ResponseWriter, r *http.Request) {
 	isAdmin, err := checkAdmin(r)
 	if !isAdmin || err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		respondWithError(w, err.Error(), http.StatusUnauthorized, err)
 		return
 	}
 
 	ID := r.PathValue("ID")
 	id, err := uuid.Parse(ID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respondWithError(w, err.Error(), http.StatusBadRequest, err)
 		return
 	}
 
 	params := database.UpdateDetailByIdParams{}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&params); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respondWithError(w, err.Error(), http.StatusBadRequest, err)
 		return
 	}
 

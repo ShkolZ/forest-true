@@ -28,7 +28,7 @@ func (cfg *ApiConfig) handlerPostOrders(w http.ResponseWriter, r *http.Request) 
 	v := r.Context().Value(authContextKey)
 	authInfo, ok := v.(AuthInfo)
 	if !ok {
-		http.Error(w, "Wrong type", http.StatusBadRequest)
+		respondWithError(w, "Wrong type", http.StatusBadRequest, fmt.Errorf("not auth type"))
 		return
 	}
 
@@ -36,14 +36,14 @@ func (cfg *ApiConfig) handlerPostOrders(w http.ResponseWriter, r *http.Request) 
 	params := OrderParams{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		http.Error(w, "Couldn't parse r body", http.StatusBadRequest)
+		respondWithError(w, "Couldn't parse r body", http.StatusBadRequest, err)
 		return
 	}
 
 	excelPath, err := createExcel(params, cfg.db)
 	tf, err := os.Open(excelPath)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondWithError(w, err.Error(), http.StatusInternalServerError, err)
 		return
 	}
 
@@ -62,7 +62,7 @@ func (cfg *ApiConfig) handlerPostOrders(w http.ResponseWriter, r *http.Request) 
 		Body:   tf,
 	})
 	if err != nil {
-		http.Error(w, "Couldn't save to bucket", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't save to bucket", http.StatusInternalServerError, err)
 		log.Println(err.Error())
 		return
 	}
@@ -79,14 +79,14 @@ func (cfg *ApiConfig) handlerPostOrders(w http.ResponseWriter, r *http.Request) 
 		UpdatedAt: time.Now(),
 	})
 	if err != nil {
-		http.Error(w, "Couldn't create order", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't create order", http.StatusInternalServerError, err)
 		log.Println(err.Error())
 		return
 	}
 
 	err = createOrderItems(params, cfg.db, orderID)
 	if err != nil {
-		http.Error(w, "Couldn't create order items", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't create order items", http.StatusInternalServerError, err)
 		log.Println(err.Error())
 		return
 	}
@@ -98,7 +98,7 @@ func (cfg *ApiConfig) handlerPostOrders(w http.ResponseWriter, r *http.Request) 
 func (cfg *ApiConfig) handlerGetOrders(w http.ResponseWriter, r *http.Request) {
 	orders, err := cfg.db.GetAllOrdersWithUsername(r.Context())
 	if err != nil {
-		http.Error(w, "Couldn't get orders", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't get orders", http.StatusInternalServerError, err)
 		log.Println(err)
 		return
 	}
@@ -110,13 +110,13 @@ func (cfg *ApiConfig) handlerDeleteOrder(w http.ResponseWriter, r *http.Request)
 	orderStringID := r.PathValue("ID")
 	orderUUID, err := uuid.Parse(orderStringID)
 	if err != nil {
-		http.Error(w, "Could parse id", http.StatusBadRequest)
+		respondWithError(w, "Could parse id", http.StatusBadRequest, err)
 		return
 	}
 
 	err = cfg.db.DeleteOrderById(r.Context(), orderUUID)
 	if err != nil {
-		http.Error(w, "Couldn't delete order", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't delete order", http.StatusInternalServerError, err)
 		log.Println(err.Error())
 		return
 	}
@@ -126,13 +126,13 @@ func (cfg *ApiConfig) handlerDeleteOrder(w http.ResponseWriter, r *http.Request)
 func (cfg *ApiConfig) handlerGetOrderItems(w http.ResponseWriter, r *http.Request) {
 	orderID, err := getPathValueUUID(r)
 	if err != nil {
-		http.Error(w, "Couldn't parse id", http.StatusBadRequest)
+		respondWithError(w, "Couldn't parse id", http.StatusBadRequest, err)
 		return
 	}
 
 	orderItems, err := cfg.db.GetOrderItemsByOrderId(r.Context(), orderID)
 	if err != nil {
-		http.Error(w, "Couldn't get order items", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't get order items", http.StatusInternalServerError, err)
 		log.Println(err)
 		return
 	}
@@ -143,13 +143,13 @@ func (cfg *ApiConfig) handlerGetOrderItems(w http.ResponseWriter, r *http.Reques
 func (cfg *ApiConfig) handlerDownloadExcel(w http.ResponseWriter, r *http.Request) {
 	isAdmin, err := checkAdmin(r)
 	if !isAdmin || err != nil {
-		http.Error(w, "Not admin", http.StatusUnauthorized)
+		respondWithError(w, "Not admin", http.StatusUnauthorized, err)
 		return
 	}
 
 	orderID, err := getPathValueUUID(r)
 	if err != nil {
-		http.Error(w, "Couldn't parse id", http.StatusBadRequest)
+		respondWithError(w, "Couldn't parse id", http.StatusBadRequest, err)
 		return
 	}
 
@@ -159,7 +159,7 @@ func (cfg *ApiConfig) handlerDownloadExcel(w http.ResponseWriter, r *http.Reques
 
 	order, err := cfg.db.GetOrderById(r.Context(), orderID)
 	if err != nil {
-		http.Error(w, "Couldn't get order", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't get order", http.StatusInternalServerError, err)
 		log.Println(err)
 		return
 	}
@@ -170,7 +170,7 @@ func (cfg *ApiConfig) handlerDownloadExcel(w http.ResponseWriter, r *http.Reques
 		Key:    &split[1],
 	}, s3.WithPresignExpires(10*time.Minute))
 	if err != nil {
-		http.Error(w, "Couldn't sign the url", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't sign the url", http.StatusInternalServerError, err)
 		log.Println(err)
 		return
 	}

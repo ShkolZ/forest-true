@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ShkolZ/forest-true/internal/database"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 )
@@ -31,7 +32,7 @@ func (cfg *ApiConfig) handlerGetProducts(w http.ResponseWriter, r *http.Request)
 
 	products, err := cfg.db.GetAllProducts(r.Context())
 	if err != nil {
-		http.Error(w, "Failed to fetch products", http.StatusInternalServerError)
+		respondWithError(w, "Failed to fetch products", http.StatusInternalServerError, err)
 		return
 	}
 
@@ -42,7 +43,7 @@ func (cfg *ApiConfig) handlerGetProducts(w http.ResponseWriter, r *http.Request)
 func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(max_upload_size)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respondWithError(w, err.Error(), http.StatusBadRequest, err)
 		return
 	}
 
@@ -50,7 +51,7 @@ func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request
 	productDesc := r.FormValue("description")
 	f, fh, err := r.FormFile("image")
 	if err != nil {
-		http.Error(w, "Counldn't get image from form", http.StatusBadRequest)
+		respondWithError(w, "Counldn't get image from form", http.StatusBadRequest, err)
 		log.Println(err.Error())
 		return
 	}
@@ -59,13 +60,13 @@ func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request
 	split := strings.Split(mediaType, "/")
 
 	if split[0] != "image" {
-		http.Error(w, "Wrong file type", http.StatusBadRequest)
+		respondWithError(w, "Wrong file type", http.StatusBadRequest, fmt.Errorf("Wrong file type"))
 		return
 	}
 
 	tf, err := os.CreateTemp("", fmt.Sprintf("%v.%v", "temp", split[1]))
 	if err != nil {
-		http.Error(w, "Couldn't create temp file", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't create temp file", http.StatusInternalServerError, err)
 		return
 	}
 
@@ -100,7 +101,7 @@ func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request
 		ImageUrl:    url,
 	})
 	if err != nil {
-		http.Error(w, "Couldn't create a product", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't create a product", http.StatusInternalServerError, err)
 		log.Println(err)
 		return
 	}
@@ -112,20 +113,36 @@ func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request
 func (cfg *ApiConfig) handlerDeleteProduct(w http.ResponseWriter, r *http.Request) {
 	isAdmin, err := checkAdmin(r)
 	if !isAdmin || err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		respondWithError(w, err.Error(), http.StatusUnauthorized, err)
 		return
 	}
 
-	ID := r.PathValue("ID")
-	id, err := uuid.Parse(ID)
+	productId, err := getPathValueUUID(r)
 	if err != nil {
-		http.Error(w, "Couldn't parse uuid", http.StatusBadRequest)
+		respondWithError(w, "Couldn't parse uuid", http.StatusBadRequest, err)
 		return
 	}
 
-	err = cfg.db.DeleteProductById(r.Context(), id)
+	product, err := cfg.db.GetProductById(r.Context(), productId)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondWithError(w, "Couldn't get product", http.StatusInternalServerError, err)
+		return
+	}
+
+	err = cfg.db.DeleteProductById(r.Context(), productId)
+	if err != nil {
+		respondWithError(w, "Couldn't delete product", http.StatusInternalServerError, err)
+		return
+	}
+
+	key := strings.Split(product.ImageUrl, *cfg.s3PublicBucket+"/")[1]
+	fmt.Println(key)
+	_, err = cfg.s3Client.DeleteObject(r.Context(), &s3.DeleteObjectInput{
+		Bucket: cfg.s3PublicBucket,
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		respondWithError(w, "Couldn't delete object from bucket", http.StatusInternalServerError, err)
 		return
 	}
 

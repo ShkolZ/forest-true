@@ -16,7 +16,7 @@ func (cfg *ApiConfig) handlerRegister(w http.ResponseWriter, r *http.Request) {
 	v := r.Context().Value(authContextKey)
 	authInfo, ok := v.(AuthInfo)
 	if !ok {
-		http.Error(w, "Wrong type assertion", http.StatusInternalServerError)
+		respondWithError(w, "Wrong type assertion", http.StatusInternalServerError, fmt.Errorf("Wrong type"))
 		return
 	}
 
@@ -29,7 +29,7 @@ func (cfg *ApiConfig) handlerRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !authInfo.IsAdmin {
-		http.Error(w, "You dont have admin role", http.StatusUnauthorized)
+		respondWithError(w, "You dont have admin role", http.StatusUnauthorized, fmt.Errorf("Wrong type"))
 		return
 	}
 
@@ -38,13 +38,13 @@ func (cfg *ApiConfig) handlerRegister(w http.ResponseWriter, r *http.Request) {
 	var par params
 
 	if err := decoder.Decode(&par); err != nil {
-		http.Error(w, "Couldn't decode", http.StatusBadRequest)
+		respondWithError(w, "Couldn't decode", http.StatusBadRequest, fmt.Errorf("Wrong type"))
 		return
 	}
 
 	hashedPassword, err := auth.HashPassword(par.Password)
 	if err != nil {
-		http.Error(w, "Couldn't create password", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't create password", http.StatusInternalServerError, fmt.Errorf("Wrong type"))
 		return
 	}
 
@@ -59,7 +59,7 @@ func (cfg *ApiConfig) handlerRegister(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:    time.Now(),
 	})
 	if err != nil {
-		http.Error(w, "Couldn't create a user", http.StatusBadRequest)
+		respondWithError(w, "Couldn't create a user", http.StatusBadRequest, fmt.Errorf("Wrong type"))
 		log.Println(err)
 		return
 	}
@@ -82,13 +82,13 @@ func (cfg *ApiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	if err := decoder.Decode(&params); err != nil {
-		http.Error(w, "Couldn't decoder params", http.StatusBadRequest)
+		respondWithError(w, "Couldn't decoder params", http.StatusBadRequest, err)
 		return
 	}
 
 	user, err := cfg.db.GetUserByUsername(r.Context(), params.Username)
 	if err != nil {
-		http.Error(w, "Couldn't get user by username", http.StatusUnauthorized)
+		respondWithError(w, "Couldn't get user by username", http.StatusUnauthorized, err)
 		return
 	}
 
@@ -97,19 +97,19 @@ func (cfg *ApiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("test yaksho tyt proyob %v\n", err)
 	}
 	if !match {
-		http.Error(w, "Password did not match", http.StatusUnauthorized)
+		respondWithError(w, "Password did not match", http.StatusUnauthorized, err)
 		return
 	}
 
 	jwtToken, err := auth.MakeJWT(user.ID, user.IsAdmin, cfg.tokenSecret, time.Minute*30)
 	if err != nil {
-		http.Error(w, "Couldn't make JWT", http.StatusUnauthorized)
+		respondWithError(w, "Couldn't make JWT", http.StatusUnauthorized, err)
 		return
 	}
 
 	refreshToken, err := auth.MakeRefreshToken()
 	if err != nil {
-		http.Error(w, "Couldn't create refresh token", http.StatusUnauthorized)
+		respondWithError(w, "Couldn't create refresh token", http.StatusUnauthorized, err)
 		return
 	}
 
@@ -137,7 +137,7 @@ func (cfg *ApiConfig) handlerMe(w http.ResponseWriter, r *http.Request) {
 func (cfg *ApiConfig) handlerGetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := cfg.db.GetAllUsers(r.Context())
 	if err != nil {
-		http.Error(w, "Couldn't get users", http.StatusInternalServerError)
+		respondWithError(w, "Couldn't get users", http.StatusInternalServerError, err)
 		return
 	}
 
@@ -147,20 +147,20 @@ func (cfg *ApiConfig) handlerGetUsers(w http.ResponseWriter, r *http.Request) {
 func (cfg *ApiConfig) handlerDeleteUser(w http.ResponseWriter, r *http.Request) {
 	isAdmin, err := checkAdmin(r)
 	if !isAdmin || err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		respondWithError(w, err.Error(), http.StatusUnauthorized, err)
 		return
 	}
 
 	ID := r.PathValue("ID")
 	id, err := uuid.Parse(ID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respondWithError(w, err.Error(), http.StatusBadRequest, err)
 		return
 	}
 
 	err = cfg.db.DeleteUserById(r.Context(), id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondWithError(w, err.Error(), http.StatusInternalServerError, err)
 		return
 	}
 

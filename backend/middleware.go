@@ -22,13 +22,13 @@ func (cfg *ApiConfig) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		token, err := auth.GetBearerToken(req.Header)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			respondWithError(w, err.Error(), http.StatusUnauthorized, err)
 			return
 		}
 
 		userID, isAdmin, err := auth.ValidateJWT(token, cfg.tokenSecret)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			respondWithError(w, err.Error(), http.StatusUnauthorized, err)
 			return
 		}
 

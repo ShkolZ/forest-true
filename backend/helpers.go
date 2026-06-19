@@ -27,6 +27,12 @@ func respondWithJson(w http.ResponseWriter, status int, str any) {
 	w.Write(data)
 }
 
+func respondWithError(w http.ResponseWriter, msg string, status int, err error) {
+	http.Error(w, msg, status)
+	log.Printf("\033[31mError Occured: %v\033[0m\n", err)
+	return
+}
+
 func checkAdmin(r *http.Request) (bool, error) {
 	v := r.Context().Value(authContextKey)
 	authInfo, ok := v.(AuthInfo)
@@ -48,7 +54,7 @@ func createExcel(params OrderParams, db *database.Queries) (string, error) {
 	f := excelize.NewFile()
 	defer f.Close()
 	sheet := "Sheet1"
-	err := f.SetSheetRow(sheet, "A1", &[]any{"Деталь", "Довжина", "Ширина", "Кількість", "ОВ", "ОН", "ОЛ", "ОП"})
+	err := f.SetSheetRow(sheet, "A1", &[]any{"Деталь", "Довжина", "Ширина", "Кількість", "Текстура", "ОВ", "ОН", "ОЛ", "ОП"})
 	if err != nil {
 		return "", nil
 	}
@@ -72,7 +78,7 @@ func createExcel(params OrderParams, db *database.Queries) (string, error) {
 				err := f.SetSheetRow(
 					sheet,
 					fmt.Sprintf("A%v", row),
-					&[]any{part.Name, part.Length, part.Width, part.Amount, btoi(part.KTop), btoi(part.KBottom), btoi(part.KLeft), btoi(part.KRight)})
+					&[]any{part.Name, part.Length, part.Width, part.Amount, 1, btoi(part.KTop), btoi(part.KBottom), btoi(part.KLeft), btoi(part.KRight)})
 				if err != nil {
 					return "", err
 				}
