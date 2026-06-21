@@ -24,7 +24,7 @@ export default function LoginPage() {
 
     try {
       const res = await authApi.login(username, password);
-      login(res.token);
+      login(res.token, res.refresh_token);
       navigate("/products", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {

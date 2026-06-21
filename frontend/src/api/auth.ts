@@ -1,7 +1,7 @@
 import { apiClient } from "./client";
 import type { User } from "../types";
 
-// POST /api/login returns the user record plus a signed JWT and refresh token.
+// POST /api/auth/login returns the user record plus a signed JWT and refresh token.
 export interface LoginResponse extends User {
   token: string;
   refresh_token: string;
@@ -17,11 +17,11 @@ export interface RegisterData {
 
 export const authApi = {
   login: (username: string, password: string) =>
-    apiClient.post<LoginResponse>("/login", { username, password }),
+    apiClient.post<LoginResponse>("/auth/login", { username, password }),
 
   // GET /api/me — requires a valid bearer token.
   getMe: () => apiClient.get<User>("/me"),
 
-  // POST /api/register — admin only, enforced server-side.
-  register: (data: RegisterData) => apiClient.post<User>("/register", data),
+  // POST /api/auth/register — admin only, enforced server-side.
+  register: (data: RegisterData) => apiClient.post<User>("/auth/register", data),
 };

@@ -17,7 +17,7 @@ function AppRoutes() {
   const { hydrate, isLoading } = useAuthStore()
 
   useEffect(() => {
-    hydrate()
+    void hydrate()
   }, [hydrate])
 
   if (isLoading) {

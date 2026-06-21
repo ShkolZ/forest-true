@@ -12,6 +12,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	JWT_TOKEN_DURATION     time.Duration = 30 * time.Minute
+	REFRESH_TOKEN_DURATION time.Duration = 2 * time.Hour
+)
+
 func (cfg *ApiConfig) handlerRegister(w http.ResponseWriter, r *http.Request) {
 	v := r.Context().Value(authContextKey)
 	authInfo, ok := v.(AuthInfo)
@@ -73,8 +78,7 @@ func (cfg *ApiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
-	type response struct {
-		database.User
+	type resBody struct {
 		Token        string `json:"token"`
 		RefreshToken string `json:"refresh_token"`
 	}
@@ -101,7 +105,7 @@ func (cfg *ApiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwtToken, err := auth.MakeJWT(user.ID, user.IsAdmin, cfg.tokenSecret, time.Minute*30)
+	jwtToken, err := auth.MakeJWT(user.ID, user.IsAdmin, cfg.tokenSecret, JWT_TOKEN_DURATION)
 	if err != nil {
 		respondWithError(w, "Couldn't make JWT", http.StatusUnauthorized, err)
 		return
@@ -116,14 +120,13 @@ func (cfg *ApiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	_, err = cfg.db.CreateRefreshToken(r.Context(),
 		database.CreateRefreshTokenParams{
 			Token:     refreshToken,
-			RevokedAt: time.Now().Add(time.Hour * 2),
+			RevokedAt: time.Now().Add(REFRESH_TOKEN_DURATION),
 			UserID:    user.ID,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		})
 
-	respondWithJson(w, 200, response{
-		User:         user,
+	respondWithJson(w, 200, resBody{
 		Token:        jwtToken,
 		RefreshToken: refreshToken,
 	})
@@ -165,4 +168,65 @@ func (cfg *ApiConfig) handlerDeleteUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	respondWithJson(w, http.StatusNoContent, struct{}{})
+}
+
+func (cfg *ApiConfig) handlerRefreshToken(w http.ResponseWriter, r *http.Request) {
+
+	decoder := json.NewDecoder(r.Body)
+
+	type params struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	reqBody := params{}
+	decoder.Decode(&reqBody)
+
+	refreshToken, err := cfg.db.GetRefreshToken(r.Context(), reqBody.RefreshToken)
+	if err != nil {
+		respondWithError(w, "No such refresh token", http.StatusUnauthorized, err)
+		return
+	}
+
+	if time.Now().After(refreshToken.RevokedAt) {
+		respondWithError(w, "Refresh token has expired", http.StatusUnauthorized, fmt.Errorf("refresh token expired"))
+		return
+	}
+
+	user, err := cfg.db.GetUserById(r.Context(), refreshToken.UserID)
+	if err != nil {
+		respondWithError(w, "Couldn't get the user", http.StatusUnauthorized, err)
+	}
+
+	jwtToken, err := auth.MakeJWT(user.ID, user.IsAdmin, cfg.tokenSecret, JWT_TOKEN_DURATION)
+	if err != nil {
+		respondWithError(w, "Couldn't make JWT", http.StatusUnauthorized, err)
+		return
+	}
+
+	newRefreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(w, "Couldn't create refresh token", http.StatusUnauthorized, err)
+		return
+	}
+
+	_, err = cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token:     newRefreshToken,
+		RevokedAt: time.Now().Add(REFRESH_TOKEN_DURATION),
+		UserID:    user.ID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	})
+	if err != nil {
+		respondWithError(w, "Couldn't add write refresh token to database", http.StatusUnauthorized, err)
+		return
+	}
+
+	resBody := struct {
+		RefreshToken string `json:"refresh_token"`
+		JwtToken     string `json:"token"`
+	}{
+		RefreshToken: newRefreshToken,
+		JwtToken:     jwtToken,
+	}
+
+	respondWithJson(w, http.StatusOK, resBody)
 }

@@ -18,10 +18,12 @@ function decodeJWT(token: string): JwtPayload | null {
   }
 }
 
-export function isTokenExpired(token: string): boolean {
+// `skewMs` treats a token as expired slightly early, so a request never goes
+// out with a token that lapses mid-flight.
+export function isTokenExpired(token: string, skewMs = 0): boolean {
   const payload = decodeJWT(token)
   if (!payload || !payload.exp) return true
-  return Date.now() >= payload.exp * 1000
+  return Date.now() >= payload.exp * 1000 - skewMs
 }
 
 export function extractUserFromToken(token: string): AuthUser | null {

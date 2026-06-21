@@ -7,7 +7,7 @@ export const usersApi = {
   getAll: () => apiClient.get<User[]>("/users"),
 
   // Creating a user goes through the admin register endpoint.
-  create: (data: RegisterData) => apiClient.post<User>("/register", data),
+  create: (data: RegisterData) => apiClient.post<User>("/auth/register", data),
 
   update: (id: string, data: Partial<RegisterData>) =>
     apiClient.put<User>(`/users/${id}`, data),

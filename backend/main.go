@@ -136,8 +136,9 @@ func main() {
 	mux.HandleFunc("GET /api/orders/{ID}/download", cfg.AuthMiddleware(cfg.handlerDownloadExcel))
 
 	// POST REQUESTS
-	mux.HandleFunc("POST /api/register", cfg.AuthMiddleware(cfg.handlerRegister))
-	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
+	mux.HandleFunc("POST /api/auth/register", cfg.AuthMiddleware(cfg.handlerRegister))
+	mux.HandleFunc("POST /api/auth/login", cfg.handlerLogin)
+	mux.HandleFunc("POST /api/auth/refresh", cfg.handlerRefreshToken)
 	mux.HandleFunc("POST /api/details", cfg.AuthMiddleware(cfg.handlerPostDetails))
 	mux.HandleFunc("POST /api/products", cfg.AuthMiddleware(cfg.handlerPostProducts))
 	mux.HandleFunc("POST /api/orders", cfg.AuthMiddleware(cfg.handlerPostOrders))
