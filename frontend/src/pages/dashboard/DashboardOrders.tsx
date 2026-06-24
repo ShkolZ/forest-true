@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { ordersApi } from "../../api/orders";
+import { ApiError } from "../../api/client";
 import { useToast } from "../../hooks/useToast";
 import Table from "../../components/ui/Table";
 import Button from "../../components/ui/Button";
@@ -58,6 +59,26 @@ export default function DashboardOrders() {
     }
   };
 
+  const handleDelete = async (order: Order) => {
+    if (
+      !window.confirm(
+        t("orders.confirmDelete", { name: order.title || order.id }),
+      )
+    )
+      return;
+    const snapshot = orders;
+    setOrders((prev) => prev.filter((o) => o.id !== order.id));
+    try {
+      await ordersApi.delete(order.id);
+      addToast(t("orders.orderDeleted"), "success");
+    } catch (err) {
+      setOrders(snapshot);
+      const msg =
+        err instanceof ApiError ? err.message : t("common.deleteFailed");
+      addToast(msg || t("common.deleteFailed"), "error");
+    }
+  };
+
   const mono = "font-mono text-xs text-slate-500";
 
   const columns: Column<Order>[] = [
@@ -65,14 +86,18 @@ export default function DashboardOrders() {
       key: "title",
       label: t("orders.titleLabel"),
       render: (val) => (
-        <span className="font-medium text-slate-800">{String(val ?? "") || "—"}</span>
+        <span className="font-medium text-slate-800">
+          {String(val ?? "") || "—"}
+        </span>
       ),
     },
     {
       key: "id",
       label: t("orders.orderId"),
       render: (val) => (
-        <span className={mono}>{val ? String(val).slice(0, 8) + "…" : "—"}</span>
+        <span className={mono}>
+          {val ? String(val).slice(0, 8) + "…" : "—"}
+        </span>
       ),
     },
     {
@@ -107,11 +132,23 @@ export default function DashboardOrders() {
     {
       key: "actions",
       label: "",
-      width: "100px",
+      width: "160px",
       render: (_, row) => (
-        <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={() => void openDetails(row)}>
+        <div className="flex justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void openDetails(row)}
+          >
             {t("orders.view")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hover:bg-red-50"
+            onClick={() => void handleDelete(row)}
+          >
+            <span className="text-red-600">{t("common.delete")}</span>
           </Button>
         </div>
       ),
@@ -122,7 +159,9 @@ export default function DashboardOrders() {
     <div className="animate-fade-in">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t("orders.title")}</h1>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {t("orders.title")}
+          </h1>
           <p className="mt-1 text-slate-500">{t("orders.subtitle")}</p>
         </div>
         <Button variant="secondary" onClick={loadOrders}>
@@ -133,7 +172,12 @@ export default function DashboardOrders() {
         </Button>
       </div>
 
-      <Table columns={columns} data={orders} loading={loading} emptyMessage={t("orders.empty")} />
+      <Table
+        columns={columns}
+        data={orders}
+        loading={loading}
+        emptyMessage={t("orders.empty")}
+      />
 
       <Modal
         isOpen={detailsOpen}
@@ -161,7 +205,9 @@ export default function DashboardOrders() {
             </Row>
             <Row label={t("orders.createdAt")}>
               <span className="text-sm text-slate-700">
-                {new Date(selectedOrder.created_at).toLocaleString(i18n.language)}
+                {new Date(selectedOrder.created_at).toLocaleString(
+                  i18n.language,
+                )}
               </span>
             </Row>
             {selectedOrder.excel_url && (
@@ -181,7 +227,9 @@ export default function DashboardOrders() {
                 {t("orders.items")}
               </h3>
               {itemsLoading ? (
-                <p className="text-sm text-slate-400">{t("orders.loadingItems")}</p>
+                <p className="text-sm text-slate-400">
+                  {t("orders.loadingItems")}
+                </p>
               ) : items.length > 0 ? (
                 <ul className="flex flex-col gap-2">
                   {items.map((item) => (
@@ -213,7 +261,13 @@ export default function DashboardOrders() {
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex items-center justify-between gap-4">
       <span className="text-sm font-medium text-slate-500">{label}</span>

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { productsApi } from "../api/products";
+import { categoriesApi } from "../api/categories";
 import { ordersApi } from "../api/orders";
 import { useCartStore } from "../stores/cartStore";
 import { useToast } from "../hooks/useToast";
@@ -10,11 +12,26 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Modal from "../components/ui/Modal";
 import Spinner from "../components/ui/Spinner";
-import type { Product } from "../types";
+import type { Product, Category } from "../types";
+
+// Sentinel for the "All" filter pill — distinct from any real category title.
+const ALL_CATEGORIES = "__all__";
 
 export default function ProductsPage() {
   const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  // Active category lives in the URL (?category=<title>) so filtered views are
+  // shareable, bookmarkable, and survive refresh / back-button navigation.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeCategory = searchParams.get("category") ?? ALL_CATEGORIES;
+  const selectCategory = useCallback(
+    (value: string) => {
+      if (value === ALL_CATEGORIES) setSearchParams({});
+      else setSearchParams({ category: value });
+    },
+    [setSearchParams],
+  );
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,9 +48,20 @@ export default function ProductsPage() {
   } = useCartStore();
   const { addToast } = useToast();
 
+  // Categories are best-effort and load once: a failure here shouldn't block
+  // the storefront, which still renders with just the "All" pill.
+  const loadCategories = useCallback(async () => {
+    const cats = await categoriesApi.getAll().catch(() => [] as Category[]);
+    setCategories(cats || []);
+  }, []);
+
+  // Filtering happens server-side: when a category is active we pass its title
+  // so the backend returns only that category's products.
   const loadProducts = useCallback(async () => {
     try {
-      const data = await productsApi.getAll();
+      const category =
+        activeCategory === ALL_CATEGORIES ? undefined : activeCategory;
+      const data = await productsApi.getAll(category);
       setProducts(data || []);
       setError(null);
     } catch {
@@ -41,8 +69,15 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [activeCategory, t]);
 
+  useEffect(() => {
+    void (async () => {
+      await loadCategories();
+    })();
+  }, [loadCategories]);
+
+  // Refetches whenever the active category changes (loadProducts depends on it).
   useEffect(() => {
     void (async () => {
       await loadProducts();
@@ -112,22 +147,59 @@ export default function ProductsPage() {
           </p>
         </div>
 
-        {products.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-300 py-20 text-slate-400">
-            <svg width="56" height="56" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                stroke="currentColor"
-                strokeWidth="1"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <p>{t("storefront.empty")}</p>
+        {categories.length > 0 && (
+          <div className="mb-5 flex flex-wrap gap-2">
+            <button
+              onClick={() => selectCategory(ALL_CATEGORIES)}
+              className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                activeCategory === ALL_CATEGORIES
+                  ? "border-brand-600 bg-brand-600 text-white"
+                  : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {t("storefront.allCategories")}
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => selectCategory(cat.title)}
+                className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                  activeCategory === cat.title
+                    ? "border-brand-600 bg-brand-600 text-white"
+                    : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                {cat.title}
+              </button>
+            ))}
           </div>
+        )}
+
+        {products.length === 0 ? (
+          activeCategory === ALL_CATEGORIES ? (
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-300 py-20 text-slate-400">
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <p>{t("storefront.empty")}</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-300 py-20 text-slate-400">
+              <p>{t("storefront.emptyCategory")}</p>
+            </div>
+          )
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-4 sm:gap-5">
             {products.map((product) => {
               const qty = getItemQuantity(product.id);
+              const categoryTitle =
+                categories.find((c) => c.id === product.category_id)?.title ??
+                product.category;
               return (
                 <Card key={product.id} hoverable>
                   <Card.Image
@@ -136,6 +208,11 @@ export default function ProductsPage() {
                     fallback={product.name}
                   />
                   <Card.Body>
+                    {categoryTitle && (
+                      <span className="mb-1.5 inline-flex w-fit rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+                        {categoryTitle}
+                      </span>
+                    )}
                     <Card.Title>{product.name}</Card.Title>
                     <Card.Description>
                       {product.description ||

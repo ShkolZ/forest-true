@@ -1,10 +1,22 @@
 import type { ReactNode } from 'react'
 
+export interface Category {
+  id: string
+  // Matches the backend `categories.title` column. Always Ukrainian; not translated.
+  title: string
+  created_at: string
+  updated_at?: string
+}
+
 export interface Product {
   id: string
   name: string
   description?: string
   image_url?: string
+  // FK to a Category; optional so products predating categories still parse.
+  category_id?: string
+  // Optional denormalized category name if the backend joins it onto the row.
+  category?: string
   created_at: string
   updated_at?: string
 }

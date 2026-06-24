@@ -134,6 +134,7 @@ func main() {
 	mux.HandleFunc("GET /api/orders", cfg.AuthMiddleware(cfg.handlerGetOrders))
 	mux.HandleFunc("GET /api/orders/{ID}/items", cfg.AuthMiddleware(cfg.handlerGetOrderItems))
 	mux.HandleFunc("GET /api/orders/{ID}/download", cfg.AuthMiddleware(cfg.handlerDownloadExcel))
+	mux.HandleFunc("GET /api/categories", cfg.handlerGetCategories)
 
 	// POST REQUESTS
 	mux.HandleFunc("POST /api/auth/register", cfg.AuthMiddleware(cfg.handlerRegister))
@@ -142,6 +143,7 @@ func main() {
 	mux.HandleFunc("POST /api/details", cfg.AuthMiddleware(cfg.handlerPostDetails))
 	mux.HandleFunc("POST /api/products", cfg.AuthMiddleware(cfg.handlerPostProducts))
 	mux.HandleFunc("POST /api/orders", cfg.AuthMiddleware(cfg.handlerPostOrders))
+	mux.HandleFunc("POST /api/categories", cfg.AuthMiddleware(cfg.handlerPostCategories))
 
 	// DELETE REQUESTS
 	mux.HandleFunc("DELETE /api/details/{ID}", cfg.AuthMiddleware(cfg.handlerDeleteDetail))

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -103,7 +102,24 @@ func (cfg *ApiConfig) handlerPutDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(params, id)
+	part, err := cfg.db.UpdateDetailById(r.Context(), database.UpdateDetailByIdParams{
+		ID:        id,
+		Name:      params.Name,
+		Width:     params.Width,
+		Length:    params.Length,
+		KTop:      params.KTop,
+		KLeft:     params.KLeft,
+		KBottom:   params.KBottom,
+		KRight:    params.KRight,
+		Amount:    params.Amount,
+		ProductID: params.ProductID,
+		UpdatedAt: time.Now(),
+	})
+	if err != nil {
+		respondWithError(w, "Couldn't update the detail", http.StatusInternalServerError, err)
+		return
+	}
 
-	// part, err := cfg.db.UpdateDetailById(r.Context(), )
+	respondWithJson(w, http.StatusOK, part)
+
 }

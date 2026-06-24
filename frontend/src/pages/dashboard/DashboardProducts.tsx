@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { productsApi } from "../../api/products";
+import { categoriesApi } from "../../api/categories";
 import { detailsApi } from "../../api/details";
 import { useToast } from "../../hooks/useToast";
 import { ApiError } from "../../api/client";
@@ -15,9 +16,9 @@ import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
 import Input from "../../components/ui/Input";
 import Spinner from "../../components/ui/Spinner";
-import type { Column, Product, Detail } from "../../types";
+import type { Column, Product, Detail, Category } from "../../types";
 
-const emptyForm = { name: "", description: "" };
+const emptyForm = { name: "", description: "", category_id: "" };
 const emptyPartForm = {
   name: "",
   width: "",
@@ -42,6 +43,7 @@ function buildFormData(form: typeof emptyForm, file: File | null): FormData {
   const fd = new FormData();
   fd.append("name", form.name);
   fd.append("description", form.description);
+  if (form.category_id) fd.append("category_id", form.category_id);
   if (file) fd.append("image", file);
   return fd;
 }
@@ -49,6 +51,7 @@ function buildFormData(form: typeof emptyForm, file: File | null): FormData {
 export default function DashboardProducts() {
   const { t, i18n } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -56,6 +59,11 @@ export default function DashboardProducts() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Inline "create category" affordance inside the product modal.
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const [savingCategory, setSavingCategory] = useState(false);
 
   // Parts ("details") state. Each product's parts are loaded on demand the
   // first time its row is expanded, then cached in `partsByProduct`.
@@ -79,8 +87,12 @@ export default function DashboardProducts() {
 
   const loadProducts = useCallback(async () => {
     try {
-      const data = await productsApi.getAll();
+      const [data, cats] = await Promise.all([
+        productsApi.getAll(),
+        categoriesApi.getAll().catch(() => [] as Category[]),
+      ]);
       setProducts(data || []);
+      setCategories(cats || []);
     } catch {
       addToast(t("products.failedLoad"), "error");
     } finally {
@@ -220,19 +232,49 @@ export default function DashboardProducts() {
     setImagePreview("");
   };
 
+  const resetCategoryState = () => {
+    setAddingCategory(false);
+    setNewCategory("");
+  };
+
   const openCreate = () => {
     setEditingProduct(null);
     setForm(emptyForm);
     resetFileState();
+    resetCategoryState();
     setModalOpen(true);
   };
 
   const openEdit = (product: Product) => {
     setEditingProduct(product);
-    setForm({ name: product.name, description: product.description || "" });
+    setForm({
+      name: product.name,
+      description: product.description || "",
+      category_id: product.category_id || "",
+    });
     setImageFile(null);
     setImagePreview(product.image_url || "");
+    resetCategoryState();
     setModalOpen(true);
+  };
+
+  const handleAddCategory = async () => {
+    const name = newCategory.trim();
+    if (!name) return;
+    setSavingCategory(true);
+    try {
+      const created = await categoriesApi.create(name);
+      setCategories((prev) => [...prev, created]);
+      setForm((f) => ({ ...f, category_id: created.id }));
+      resetCategoryState();
+      addToast(t("products.categoryAdded"), "success");
+    } catch (err) {
+      const msg =
+        err instanceof ApiError ? err.message : t("products.failedAddCategory");
+      addToast(msg || t("products.failedAddCategory"), "error");
+    } finally {
+      setSavingCategory(false);
+    }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -304,6 +346,20 @@ export default function DashboardProducts() {
       ),
     },
     { key: "name", label: t("products.name") },
+    {
+      key: "category_id",
+      label: t("products.category"),
+      render: (val) => {
+        const cat = categories.find((c) => c.id === val);
+        return cat ? (
+          <span className="inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+            {cat.title}
+          </span>
+        ) : (
+          <span className="text-slate-300">—</span>
+        );
+      },
+    },
     {
       key: "description",
       label: t("products.description"),
@@ -578,6 +634,72 @@ export default function DashboardProducts() {
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder={t("products.descriptionPlaceholder")}
           />
+
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="product-category"
+              className="text-sm font-medium text-slate-700"
+            >
+              {t("products.category")}
+            </label>
+            {addingCategory ? (
+              <div className="flex gap-2">
+                <input
+                  id="product-category-new"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void handleAddCategory();
+                    }
+                  }}
+                  placeholder={t("products.categoryPlaceholder")}
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                  autoFocus
+                />
+                <Button
+                  type="button"
+                  loading={savingCategory}
+                  onClick={handleAddCategory}
+                >
+                  {t("common.add")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={resetCategoryState}
+                >
+                  {t("common.cancel")}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <select
+                  id="product-category"
+                  value={form.category_id}
+                  onChange={(e) =>
+                    setForm({ ...form, category_id: e.target.value })
+                  }
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                >
+                  <option value="">{t("products.noCategory")}</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.title}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setAddingCategory(true)}
+                >
+                  {t("products.newCategory")}
+                </Button>
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-col gap-1.5">
             <label

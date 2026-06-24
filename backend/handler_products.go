@@ -29,6 +29,16 @@ type resProduct struct {
 }
 
 func (cfg *ApiConfig) handlerGetProducts(w http.ResponseWriter, r *http.Request) {
+	if categoryParam := r.URL.Query().Get("category"); categoryParam != "" {
+		products, err := cfg.db.GetProductsByCategoryName(r.Context(), categoryParam)
+		if err != nil {
+			respondWithError(w, "Failed to fetch products", http.StatusInternalServerError, err)
+			return
+		}
+
+		respondWithJson(w, http.StatusOK, products)
+		return
+	}
 
 	products, err := cfg.db.GetAllProducts(r.Context())
 	if err != nil {
@@ -36,7 +46,7 @@ func (cfg *ApiConfig) handlerGetProducts(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	respondWithJson(w, 200, products)
+	respondWithJson(w, http.StatusOK, products)
 
 }
 
@@ -49,6 +59,12 @@ func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request
 
 	productName := r.FormValue("name")
 	productDesc := r.FormValue("description")
+	categoryStringID := r.FormValue("category_id")
+	categoryID, err := uuid.Parse(categoryStringID)
+	if err != nil {
+		respondWithError(w, "Couldn't parse id", http.StatusBadRequest, err)
+		return
+	}
 	f, fh, err := r.FormFile("image")
 	if err != nil {
 		respondWithError(w, "Counldn't get image from form", http.StatusBadRequest, err)
@@ -99,6 +115,7 @@ func (cfg *ApiConfig) handlerPostProducts(w http.ResponseWriter, r *http.Request
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 		ImageUrl:    url,
+		CategoryID:  categoryID,
 	})
 	if err != nil {
 		respondWithError(w, "Couldn't create a product", http.StatusInternalServerError, err)

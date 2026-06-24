@@ -2,6 +2,7 @@
   "common": {
     "brand": "Forest",
     "cancel": "Cancel",
+    "add": "Add",
     "saveChanges": "Save Changes",
     "edit": "Edit",
     "delete": "Delete",
@@ -54,7 +55,9 @@
     "submitOrder": "Submit Order",
     "orderSubmitted": "Order submitted successfully!",
     "failedSubmit": "Failed to submit order",
-    "failedLoad": "Failed to load products"
+    "failedLoad": "Failed to load products",
+    "allCategories": "All",
+    "emptyCategory": "No products in this category yet"
   },
   "products": {
     "title": "Products",
@@ -65,6 +68,12 @@
     "addTitle": "Add Product",
     "name": "Name",
     "description": "Description",
+    "category": "Category",
+    "noCategory": "No category",
+    "newCategory": "+ New",
+    "categoryPlaceholder": "e.g. Kitchen",
+    "categoryAdded": "Category added",
+    "failedAddCategory": "Failed to add category",
     "image": "Image",
     "preview": "Preview",
     "productName": "Product Name",
@@ -148,6 +157,8 @@
     "loadingItems": "Loading items…",
     "failedLoadItems": "Failed to load order items",
     "failedDownload": "Failed to get download link",
-    "failedLoad": "Failed to load orders"
+    "failedLoad": "Failed to load orders",
+    "confirmDelete": "Delete order \"{{name}}\"?",
+    "orderDeleted": "Order deleted"
   }
 }

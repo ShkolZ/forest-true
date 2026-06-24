@@ -10,6 +10,12 @@ import (
 	"github.com/google/uuid"
 )
 
+type Category struct {
+	ID        uuid.UUID `json:"id"`
+	Title     string    `json:"title"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type Detail struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
@@ -49,6 +55,7 @@ type Product struct {
 	ImageUrl    string    `json:"image_url"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	CategoryID  uuid.UUID `json:"category_id"`
 }
 
 type RefreshToken struct {

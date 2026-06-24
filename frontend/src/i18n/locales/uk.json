@@ -2,6 +2,7 @@
   "common": {
     "brand": "Forest",
     "cancel": "Скасувати",
+    "add": "Додати",
     "saveChanges": "Зберегти зміни",
     "edit": "Редагувати",
     "delete": "Видалити",
@@ -54,7 +55,9 @@
     "submitOrder": "Оформити замовлення",
     "orderSubmitted": "Замовлення успішно оформлено!",
     "failedSubmit": "Не вдалося оформити замовлення",
-    "failedLoad": "Не вдалося завантажити товари"
+    "failedLoad": "Не вдалося завантажити товари",
+    "allCategories": "Усі",
+    "emptyCategory": "У цій категорії ще немає товарів"
   },
   "products": {
     "title": "Товари",
@@ -65,6 +68,12 @@
     "addTitle": "Додати товар",
     "name": "Назва",
     "description": "Опис",
+    "category": "Категорія",
+    "noCategory": "Без категорії",
+    "newCategory": "+ Нова",
+    "categoryPlaceholder": "напр. Кухня",
+    "categoryAdded": "Категорію додано",
+    "failedAddCategory": "Не вдалося додати категорію",
     "image": "Зображення",
     "preview": "Перегляд",
     "productName": "Назва товару",
@@ -148,6 +157,8 @@
     "loadingItems": "Завантаження позицій…",
     "failedLoadItems": "Не вдалося завантажити позиції замовлення",
     "failedDownload": "Не вдалося отримати посилання для завантаження",
-    "failedLoad": "Не вдалося завантажити замовлення"
+    "failedLoad": "Не вдалося завантажити замовлення",
+    "confirmDelete": "Видалити замовлення «{{name}}»?",
+    "orderDeleted": "Замовлення видалено"
   }
 }

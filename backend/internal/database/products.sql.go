@@ -13,9 +13,9 @@ import (
 )
 
 const createProduct = `-- name: CreateProduct :one
-INSERT INTO products (id, name, description, image_url, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, name, description, image_url, created_at, updated_at
+INSERT INTO products (id, name, description, image_url, created_at, updated_at, category_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, name, description, image_url, created_at, updated_at, category_id
 `
 
 type CreateProductParams struct {
@@ -25,6 +25,7 @@ type CreateProductParams struct {
 	ImageUrl    string    `json:"image_url"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	CategoryID  uuid.UUID `json:"category_id"`
 }
 
 func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error) {
@@ -35,6 +36,7 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		arg.ImageUrl,
 		arg.CreatedAt,
 		arg.UpdatedAt,
+		arg.CategoryID,
 	)
 	var i Product
 	err := row.Scan(
@@ -44,6 +46,7 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		&i.ImageUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CategoryID,
 	)
 	return i, err
 }
@@ -58,7 +61,7 @@ func (q *Queries) DeleteProductById(ctx context.Context, id uuid.UUID) error {
 }
 
 const getAllProducts = `-- name: GetAllProducts :many
-SELECT id, name, description, image_url, created_at, updated_at FROM products
+SELECT id, name, description, image_url, created_at, updated_at, category_id FROM products
 `
 
 func (q *Queries) GetAllProducts(ctx context.Context) ([]Product, error) {
@@ -77,6 +80,7 @@ func (q *Queries) GetAllProducts(ctx context.Context) ([]Product, error) {
 			&i.ImageUrl,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.CategoryID,
 		); err != nil {
 			return nil, err
 		}
@@ -92,7 +96,7 @@ func (q *Queries) GetAllProducts(ctx context.Context) ([]Product, error) {
 }
 
 const getProductById = `-- name: GetProductById :one
-SELECT id, name, description, image_url, created_at, updated_at FROM products WHERE id = $1
+SELECT id, name, description, image_url, created_at, updated_at, category_id FROM products WHERE id = $1
 `
 
 func (q *Queries) GetProductById(ctx context.Context, id uuid.UUID) (Product, error) {
@@ -105,15 +109,116 @@ func (q *Queries) GetProductById(ctx context.Context, id uuid.UUID) (Product, er
 		&i.ImageUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CategoryID,
 	)
 	return i, err
+}
+
+const getProductsByCategory = `-- name: GetProductsByCategory :many
+SELECT products.id, products.name, products.description, products.image_url, products.created_at, products.updated_at, products.category_id, categories.title AS category 
+FROM products
+JOIN categories ON products.category_id = categories.id
+WHERE categories.id = $1
+`
+
+type GetProductsByCategoryRow struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	ImageUrl    string    `json:"image_url"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	CategoryID  uuid.UUID `json:"category_id"`
+	Category    string    `json:"category"`
+}
+
+func (q *Queries) GetProductsByCategory(ctx context.Context, id uuid.UUID) ([]GetProductsByCategoryRow, error) {
+	rows, err := q.db.QueryContext(ctx, getProductsByCategory, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetProductsByCategoryRow
+	for rows.Next() {
+		var i GetProductsByCategoryRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.ImageUrl,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CategoryID,
+			&i.Category,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getProductsByCategoryName = `-- name: GetProductsByCategoryName :many
+SELECT products.id, products.name, products.description, products.image_url, products.created_at, products.updated_at, products.category_id, categories.title AS category 
+FROM products
+JOIN categories ON products.category_id = categories.id
+WHERE categories.title = $1
+`
+
+type GetProductsByCategoryNameRow struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	ImageUrl    string    `json:"image_url"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	CategoryID  uuid.UUID `json:"category_id"`
+	Category    string    `json:"category"`
+}
+
+func (q *Queries) GetProductsByCategoryName(ctx context.Context, title string) ([]GetProductsByCategoryNameRow, error) {
+	rows, err := q.db.QueryContext(ctx, getProductsByCategoryName, title)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetProductsByCategoryNameRow
+	for rows.Next() {
+		var i GetProductsByCategoryNameRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.ImageUrl,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CategoryID,
+			&i.Category,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateProductById = `-- name: UpdateProductById :one
 UPDATE products
 SET name = $2, description = $3, image_url = $4, updated_at = $5
 WHERE id = $1
-RETURNING id, name, description, image_url, created_at, updated_at
+RETURNING id, name, description, image_url, created_at, updated_at, category_id
 `
 
 type UpdateProductByIdParams struct {
@@ -140,6 +245,7 @@ func (q *Queries) UpdateProductById(ctx context.Context, arg UpdateProductByIdPa
 		&i.ImageUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CategoryID,
 	)
 	return i, err
 }
